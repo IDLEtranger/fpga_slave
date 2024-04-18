@@ -1,14 +1,14 @@
-Analysis & Synthesis Status : Successful - Tue Apr 16 20:23:26 2024
+Analysis & Synthesis Status : Failed - Thu Apr 18 13:08:26 2024
 Quartus Prime Version : 18.1.0 Build 625 09/12/2018 SJ Standard Edition
 Revision Name : fpga_slave
 Top-level Entity Name : fpga_slave
 Family : Cyclone IV E
-Total logic elements : 200
-    Total combinational functions : 185
-    Dedicated logic registers : 129
-Total registers : 129
-Total pins : 4
-Total virtual pins : 0
-Total memory bits : 1,280
-Embedded Multiplier 9-bit elements : 0
-Total PLLs : 1
+Total logic elements : N/A until Partition Merge
+    Total combinational functions : N/A until Partition Merge
+    Dedicated logic registers : N/A until Partition Merge
+Total registers : N/A until Partition Merge
+Total pins : N/A until Partition Merge
+Total virtual pins : N/A until Partition Merge
+Total memory bits : N/A until Partition Merge
+Embedded Multiplier 9-bit elements : N/A until Partition Merge
+Total PLLs : N/A until Partition Merge
