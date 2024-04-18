@@ -50,7 +50,7 @@ begin
 end
 
 // state
-/* 测试程序设计FPGA为1秒向串口发送一次“HELLO ALINX\r\n”
+/* 测试程序设计FPGA为1秒向串口发送一次“AD1：xxxxmV\r\nAD2：xxxxmV”
 不发送期间，如果接受到串口数据，直接把接收到的数据送到发送模块再返回 */
 always@(*)
 begin
@@ -106,7 +106,7 @@ begin
     begin
         tx_cnt <= 8'd0;
     end
-    else if(state == SEND && tx_data_valid && tx_data_ready && tx_cnt < 8'd12) //Send 12 bytes data
+    else if(state == SEND && tx_data_valid && tx_data_ready && tx_cnt < 8'd15) //Send 12 bytes data
 		tx_cnt <= tx_cnt + 8'd1; //Send data counter
 	else if(state == SEND && tx_data_valid && tx_data_ready)//last byte sent is complete
 		tx_cnt <= 8'd0;
@@ -132,19 +132,22 @@ end
 always@(*)
 begin
 	case(tx_cnt)
-		8'd0 :  tx_str <= "A";
-		8'd1 :  tx_str <= "D";
-		8'd2 :  tx_str <= "1";
-		8'd3 :  tx_str <= " ";
-		8'd4 :  tx_str <= "O";
-		8'd5 :  tx_str <= " ";
-		8'd6 :  tx_str <= "A";
-		8'd7 :  tx_str <= "L";
-		8'd8 :  tx_str <= "I";
-		8'd9 :  tx_str <= "N";
-		8'd10:  tx_str <= "X";
-		8'd11:  tx_str <= "\r";
-		8'd12:  tx_str <= "\n";
+		8'd0  :  tx_str <= "A";
+		8'd1  :  tx_str <= "D";
+		8'd2  :  tx_str <= "1";
+		8'd3  :  tx_str <= ":";
+		8'd4  :  tx_str <= {4'b0000, volt_ch1[12:8]};
+		8'd5  :  tx_str <= volt_ch1[7:0];
+		8'd6  :  tx_str <= "\r";
+		8'd7  :  tx_str <= "\n";
+		8'd8  :  tx_str <= "A";
+		8'd9  :  tx_str <= "D";
+		8'd10 :  tx_str <= "2";
+		8'd11 :  tx_str <= ":";
+		8'd12 :  tx_str <= {4'b0000, volt_ch2[12:8]};
+		8'd13 :  tx_str <= volt_ch2[7:0];
+		8'd14 :  tx_str <= "\r";
+		8'd15 :  tx_str <= "\n";
 		default:tx_str <= 8'd0;
 	endcase
 end
@@ -152,17 +155,8 @@ end
 /************** ADC **************/
 /*********************************/
 // ADC output data(mV)
-wire [11:0] volt_ch1;
+wire [11:0] volt_ch1; // voltage channel 1
 wire [11:0] volt_ch2;
-reg ad_data_availabe;
-
-always@(posedge ad_clk) 
-begin
-#5 
-ad_data_availabe = 1'b1;
-#50
-ad_data_availabe = 1'b0;
-end
 
 /*************************************/
 /************* SPI_SLAVE *************/
