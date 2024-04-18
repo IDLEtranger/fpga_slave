@@ -1,0 +1,161 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dD:/FPGA/my_train/fpga_slave/proj/simulation/modelsim
+T_opt
+!s110 1712570402
+Ve`TT52kbS3]KOGk2nIPH21
+04 11 4 work tb_dig_volt fast 0
+=1-d8bbc1f5ef06-6613c022-e3-9cb8
+Z1 o-quiet -auto_acc_if_foreign -work work -L altera_ver -L lpm_ver -L sgate_ver -L altera_mf_ver -L altera_lnsim_ver -L cycloneive_ver -L rtl_work -L work +acc
+Z2 tCvgOpt 0
+n@_opt
+Z3 OL;O;10.5;63
+R0
+T_opt1
+Z4 !s110 1713267761
+V91Wgi?@d@l1AGg6aaQA`_1
+04 7 4 work tb_usrt fast 0
+=1-d8bbc1f5ef06-661e6431-2f3-a01c
+R1
+R2
+n@_opt1
+R3
+vfpga_slave
+Z5 !s110 1713267760
+!i10b 1
+!s100 hg6C1zZlbM4Ml;cWlEz]@1
+IXa62116i@ja^RD3TT^N0z1
+Z6 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1713245603
+8D:/FPGA/my_train/fpga_slave/rtl/fpga_slave.v
+FD:/FPGA/my_train/fpga_slave/rtl/fpga_slave.v
+L0 1
+Z7 OL;L;10.5;63
+r1
+!s85 0
+31
+Z8 !s108 1713267760.000000
+!s107 D:/FPGA/my_train/fpga_slave/rtl/fpga_slave.v|
+!s90 -reportprogress|300|-vlog01compat|-work|work|+incdir+D:/FPGA/my_train/fpga_slave/rtl|D:/FPGA/my_train/fpga_slave/rtl/fpga_slave.v|
+!i113 0
+Z9 o-vlog01compat -work work -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+!s92 -vlog01compat -work work +incdir+D:/FPGA/my_train/fpga_slave/rtl -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+R2
+vpll
+R5
+!i10b 1
+!s100 bn=aka[Q8CzK<Z0:FLjd?0
+I<FA9OfHjFB5Jdo9SVn:D?3
+R6
+R0
+w1712562601
+8D:/FPGA/my_train/fpga_slave/proj/ipcore/pll_ip/pll.v
+FD:/FPGA/my_train/fpga_slave/proj/ipcore/pll_ip/pll.v
+L0 39
+R7
+r1
+!s85 0
+31
+R8
+!s107 D:/FPGA/my_train/fpga_slave/proj/ipcore/pll_ip/pll.v|
+!s90 -reportprogress|300|-vlog01compat|-work|work|+incdir+D:/FPGA/my_train/fpga_slave/proj/ipcore/pll_ip|D:/FPGA/my_train/fpga_slave/proj/ipcore/pll_ip/pll.v|
+!i113 0
+R9
+!s92 -vlog01compat -work work +incdir+D:/FPGA/my_train/fpga_slave/proj/ipcore/pll_ip -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+R2
+vpll_altpll
+R5
+!i10b 1
+!s100 PZC8MN>_<h1ABK>Gg3Ia72
+IJK8:WN@^ank:V>c?Y[JT@3
+R6
+R0
+w1712563590
+8D:/FPGA/my_train/fpga_slave/proj/db/pll_altpll.v
+FD:/FPGA/my_train/fpga_slave/proj/db/pll_altpll.v
+Z10 L0 29
+R7
+r1
+!s85 0
+31
+R8
+!s107 D:/FPGA/my_train/fpga_slave/proj/db/pll_altpll.v|
+!s90 -reportprogress|300|-vlog01compat|-work|work|+incdir+D:/FPGA/my_train/fpga_slave/proj/db|D:/FPGA/my_train/fpga_slave/proj/db/pll_altpll.v|
+!i113 0
+R9
+!s92 -vlog01compat -work work +incdir+D:/FPGA/my_train/fpga_slave/proj/db -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+R2
+vtb_usrt
+R4
+!i10b 1
+!s100 a060R?Y;DN^;7HQd]3L^H0
+ImP]cLk>UU`]`f`WY=`lKR0
+R6
+R0
+w1713244819
+8D:/FPGA/my_train/fpga_slave/proj/../sim/tb_usrt.v
+FD:/FPGA/my_train/fpga_slave/proj/../sim/tb_usrt.v
+L0 2
+R7
+r1
+!s85 0
+31
+!s108 1713267761.000000
+!s107 D:/FPGA/my_train/fpga_slave/proj/../sim/tb_usrt.v|
+!s90 -reportprogress|300|-vlog01compat|-work|work|+incdir+D:/FPGA/my_train/fpga_slave/proj/../sim|D:/FPGA/my_train/fpga_slave/proj/../sim/tb_usrt.v|
+!i113 0
+R9
+!s92 -vlog01compat -work work +incdir+D:/FPGA/my_train/fpga_slave/proj/../sim -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+R2
+vuart_rx
+R5
+!i10b 1
+!s100 ?^QKdL@=:a@C9YgF3DKcd3
+I5>6m`clmREEJ[@=ZA6=o71
+R6
+R0
+w1501572002
+8D:/FPGA/my_train/fpga_slave/rtl/usart/uart_rx.v
+FD:/FPGA/my_train/fpga_slave/rtl/usart/uart_rx.v
+R10
+R7
+r1
+!s85 0
+31
+R8
+!s107 D:/FPGA/my_train/fpga_slave/rtl/usart/uart_rx.v|
+!s90 -reportprogress|300|-vlog01compat|-work|work|+incdir+D:/FPGA/my_train/fpga_slave/rtl/usart|D:/FPGA/my_train/fpga_slave/rtl/usart/uart_rx.v|
+!i113 0
+R9
+Z11 !s92 -vlog01compat -work work +incdir+D:/FPGA/my_train/fpga_slave/rtl/usart -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+R2
+vuart_tx
+R5
+!i10b 1
+!s100 ]?NWUil:c^T@hmd<zGYff1
+I>d8d8XdmXIDjm^5`>X2P>3
+R6
+R0
+w1713267535
+8D:/FPGA/my_train/fpga_slave/rtl/usart/uart_tx.v
+FD:/FPGA/my_train/fpga_slave/rtl/usart/uart_tx.v
+R10
+R7
+r1
+!s85 0
+31
+R8
+!s107 D:/FPGA/my_train/fpga_slave/rtl/usart/uart_tx.v|
+!s90 -reportprogress|300|-vlog01compat|-work|work|+incdir+D:/FPGA/my_train/fpga_slave/rtl/usart|D:/FPGA/my_train/fpga_slave/rtl/usart/uart_tx.v|
+!i113 0
+R9
+R11
+R2
