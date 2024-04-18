@@ -1,14 +1,16 @@
 `timescale 1ns/1ns
 module fpga_slave
 (
-    input                        clk_50M,
-	input                        sys_rst_n,
+    input wire clk_50M,
+	input wire sys_rst_n,
     
     /** USART **/
-	input                        uart_rx,
-	output                       uart_tx,
+	input wire uart_rx,
+	output wire uart_tx,
 
     /** ADC **/
+    output wire ad1_clk,
+    output wire ad2_clk,
     input wire [11:0] ad1_in,
     input wire [11:0] ad2_in
 
@@ -17,6 +19,8 @@ module fpga_slave
 /* pll output clock */
 wire sys_clk; // system clock 100MHz
 wire ad_clk; // adc clock 65MHz
+assign ad1_clk = ad_clk;
+assign ad2_clk = ad_clk;
 
 /*********************************/
 /************* USART *************/
@@ -132,22 +136,22 @@ end
 always@(*)
 begin
 	case(tx_cnt)
-		8'd0  :  tx_str <= "A";
-		8'd1  :  tx_str <= "D";
-		8'd2  :  tx_str <= "1";
-		8'd3  :  tx_str <= ":";
+		8'd0  :  tx_str <= 8'hff;
+		8'd1  :  tx_str <= 8'h00;
+		8'd2  :  tx_str <= 8'h00;
+		8'd3  :  tx_str <= 8'hff;
 		8'd4  :  tx_str <= {4'b0000, volt_ch1[11:8]};
 		8'd5  :  tx_str <= volt_ch1[7:0];
-		8'd6  :  tx_str <= "\r";
-		8'd7  :  tx_str <= "\n";
-		8'd8  :  tx_str <= "A";
-		8'd9  :  tx_str <= "D";
-		8'd10 :  tx_str <= "2";
-		8'd11 :  tx_str <= ":";
+		8'd6  :  tx_str <= 8'hff;
+		8'd7  :  tx_str <= 8'h00;
+		8'd8  :  tx_str <= 8'h00;
+		8'd9  :  tx_str <= 8'h00;
+		8'd10 :  tx_str <= 8'h00;
+		8'd11 :  tx_str <= 8'hff;
 		8'd12 :  tx_str <= {4'b0000, volt_ch2[11:8]};
 		8'd13 :  tx_str <= volt_ch2[7:0];
-		8'd14 :  tx_str <= "\r";
-		8'd15 :  tx_str <= "\n";
+		8'd14 :  tx_str <= 8'hff;
+		8'd15 :  tx_str <= 8'h00;
 		default:tx_str <= 8'd0;
 	endcase
 end
