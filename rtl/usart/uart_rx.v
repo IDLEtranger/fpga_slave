@@ -1,31 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////
-//                                                                              //
-//                                                                              //
-//  Author: meisq                                                               //
-//          msq@qq.com                                                          //
-//          ALINX(shanghai) Technology Co.,Ltd                                  //
-//          heijin                                                              //
-//     WEB: http://www.alinx.cn/                                                //
-//     BBS: http://www.heijin.org/                                              //
-//                                                                              //
-//////////////////////////////////////////////////////////////////////////////////
-//                                                                              //
-// Copyright (c) 2017,ALINX(shanghai) Technology Co.,Ltd                        //
-//                    All rights reserved                                       //
-//                                                                              //
-// This source file may be used and distributed without restriction provided    //
-// that this copyright statement is not removed from the file and that any      //
-// derivative work contains the original copyright notice and the associated    //
-// disclaimer.                                                                  //
-//                                                                              //
-//////////////////////////////////////////////////////////////////////////////////
 
-//================================================================================
-//  Revision History:
-//  Date          By            Revision    Change Description
-//--------------------------------------------------------------------------------
-//2017/8/1                    1.0          Original
-//*******************************************************************************/
 module uart_rx
 #(
 	parameter CLK_FRE = 50,      //clock frequency(Mhz)
@@ -39,7 +12,7 @@ module uart_rx
 	input                        rx_data_ready,    //data receiver module ready
 	input                        rx_pin            //serial data input
 );
-//calculates the clock cycle for baud rate 
+//calculates the clock cycle for baud rate
 localparam                       CYCLE = CLK_FRE * 1000000 / BAUD_RATE;
 //state machine code
 localparam                       S_IDLE      = 1;

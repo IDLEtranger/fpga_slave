@@ -2,7 +2,7 @@
 module ad9238
 ( 
     input ad_clk, // 65MHz
-    input sys_rst_n,
+    input rst_n,
     input [11:0] ad1_in,
     input [11:0] ad2_in,
 
@@ -20,10 +20,10 @@ assign volt_sign_ch1 = (ad1_in < 12'b100000000000) ? 1'b1 : 1'b0;
 assign volt_sign_ch2 = (ad2_in < 12'b100000000000) ? 1'b1 : 1'b0;
 
 // 计算实际电压
-always @(posedge ad_clk or negedge sys_rst_n)
+always @(posedge ad_clk or negedge rst_n)
 begin
     #5;
-    if(sys_rst_n == 1'b0)
+    if(rst_n == 1'b0)
     begin
         volt_ch1 <= 12'b0;
         volt_ch2 <= 12'b0;

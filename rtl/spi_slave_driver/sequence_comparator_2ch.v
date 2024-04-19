@@ -1,41 +1,23 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: Çç¿Õ-Tiso£¨BÕ¾Í¬Ãû£©
-// 
-// Create Date: 2024/03/03 00:07:31
-// Design Name: 
-// Module Name: sequence_comparator_2ch
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 /*
     sequence_comparator_2ch #(.width(),.filt_sequence0(),.filt_sequence1()) SC0(
-        .result0(),
-        .result1(),
+        .seq_posedge(),
+        .seq_negedge(),
         .sequence_in(),
         .clk(),
         .rst()
         );
 */
 
-module sequence_comparator_2ch #(parameter width = 8,filt_sequence0 = 8'h0f,filt_sequence1 = 8'hf0)(
-    output reg result0,
-    output reg result1,
+module sequence_comparator_2ch #(parameter width = 2,filt_sequence0 = 2'b01,filt_sequence1 = 2'b10)
+(
+    output reg seq_posedge,
+    output reg seq_negedge,
     input sequence_in,
     input clk,
     input rst
-    );
+);
     
     reg[width-2:0] sequence_shift;
     
@@ -50,21 +32,21 @@ module sequence_comparator_2ch #(parameter width = 8,filt_sequence0 = 8'h0f,filt
     always@(*)
     begin
         if(rst)
-            result0 = 0;
+            seq_posedge = 0;
         else if({sequence_shift[width-2:0],sequence_in} == filt_sequence0)
-            result0 = 1;
+            seq_posedge = 1;
         else
-            result0 = 0;
+            seq_posedge = 0;
     end
     
     always@(*)
     begin
         if(rst)
-            result1 = 0;
+            seq_negedge = 0;
         else if({sequence_shift[width-2:0],sequence_in} == filt_sequence1)
-            result1 = 1;
+            seq_negedge = 1;
         else
-            result1 = 0;
+            seq_negedge = 0;
     end
     
 endmodule

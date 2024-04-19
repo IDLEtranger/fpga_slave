@@ -16,7 +16,7 @@ module fpga_slave
 
     /** SPI_SLAVE **/
 );
-/* pll output clock */
+/* clock */
 wire sys_clk; // system clock 100MHz
 wire ad_clk; // adc clock 65MHz
 assign ad1_clk = ad_clk;
@@ -25,6 +25,7 @@ assign ad2_clk = ad_clk;
 /*********************************/
 /************* USART *************/
 /*********************************/
+/*
 parameter                        CLK_FRE = 100; // Mhz
 
 localparam                       IDLE =  3'd0;
@@ -54,8 +55,8 @@ begin
 end
 
 // state
-/* 测试程序设计FPGA为1秒向串口发送一次“AD1：xxxxmV\r\nAD2：xxxxmV”
-不发送期间，如果接受到串口数据，直接把接收到的数据送到发送模块再返回 */
+// 测试程序设计FPGA为1秒向串口发送一次“AD1：xxxxmV\r\nAD2：xxxxmV”
+//不发送期间，如果接受到串口数据，直接把接收到的数据送到发送模块再返回
 always@(*)
 begin
     case(state)
@@ -155,6 +156,7 @@ begin
 		default:tx_str <= 8'd0;
 	endcase
 end
+*/
 /*********************************/
 /************** ADC **************/
 /*********************************/
@@ -207,7 +209,7 @@ uart_tx#
 ad9238 adc_inst
 ( 
     .ad_clk (ad_clk),
-    .sys_rst_n (sys_rst_n),
+    .rst_n (sys_rst_n),
     .ad1_in (ad1_in),
     .ad2_in (ad2_in),
 

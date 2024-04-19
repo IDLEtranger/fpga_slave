@@ -1,48 +1,35 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 晴空-Tiso（B站同名）
-// 
-// Create Date: 2024/03/09 17:53:08
-// Design Name: 
-// Module Name: spi_slave_driver
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 /*
-    spi_slave_driver SPI_SLAVE(
-        .rec_data(),
-        .rec_done(),
-        .miso(),
-        .mosi(),
-        .sclk(),
-        .cs_n(),
-        .response_data(),
-        .mode(),
-        .clk(),
-        .rst()
-        );
+spi_slave_driver #(.mode(2'b00))
+spi_slave_inst
+(
+    .clk(),
+    .rst()
+    .rec_data(),
+    .rec_valid(),
+    .miso(),
+    .mosi(),
+    .sclk(),
+    .cs_n(),
+    .response_data()
+);
 */
 
-//全双工SPI从机驱动
-//全局时钟clk至少是sclk可能出现的最高频率的两倍起才可正常运行（建议四倍起）
-//rec_data为主机发过来的数据，由于在运行中rec_data会一直变化
-//所以在rec_done为高电平时需要将rec_data取出保存并另存
-//response_data为从机响应主机数据
-//mode需要和主机mode保持一致
-module spi_slave_driver(
+/*
+全双工SPI从机驱动
+全局时钟clk至少是sclk可能出现的最高频率的两倍起才可正常运行（建议四倍起）
+rec_data为主机发过来的数据，由于在运行中rec_data会一直变化
+所以在rec_valid为高电平时需要将rec_data取出保存并另存
+response_data为从机响应主机数据
+mode需要和主机mode保持一致
+mode[1]为时钟极性CPOL，mode[0]为时钟相位CPHA
+*/
+
+module spi_slave_driver
+#(parameter mode = 2'b00)
+(
     output reg[7:0] rec_data,
-    output reg rec_done,
+    output reg rec_valid,
     
     output reg miso,
     input mosi,
@@ -50,10 +37,9 @@ module spi_slave_driver(
     input cs_n,
     
     input[7:0] response_data,
-    input[1:0] mode,
     input clk,
     input rst
-    );
+);
     
     localparam IDLE = 0,
                WR_RD = 1;
@@ -79,6 +65,7 @@ module spi_slave_driver(
             state <= IDLE;
     end
     
+    // miso 从最低位开始发送
     always@(posedge clk or posedge rst)
     begin
         if(rst) begin
@@ -130,16 +117,16 @@ module spi_slave_driver(
     always@(posedge clk or posedge rst)
     begin
         if(rst)
-            rec_done <= 0;
+            rec_valid <= 0;
         else if(state == WR_RD && finish_edge && finish_cnt == 0)
-            rec_done <= 1;
+            rec_valid <= 1;
         else
-            rec_done <= 0;
+            rec_valid <= 0;
     end
     
     sequence_comparator_2ch #(.width(2),.filt_sequence0(2'b01),.filt_sequence1(2'b10)) SC0(
-        .result0(sclk_rise),
-        .result1(sclk_fall),
+        .seq_posedge(sclk_rise),
+        .seq_negedge(sclk_fall),
         .sequence_in(sclk),
         .clk(clk),
         .rst(rst)
