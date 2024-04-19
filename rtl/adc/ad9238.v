@@ -6,18 +6,18 @@ module ad9238
     input [11:0] ad1_in,
     input [11:0] ad2_in,
 
-    output reg [11:0] volt_ch1,
-    output reg [11:0] volt_ch2
+    output reg [15:0] volt_ch1,
+    output reg [15:0] volt_ch2
 );
 
 wire volt_sign_ch1;
 wire volt_sign_ch2;
-reg [50:0] volt_ch1_reg;
-reg [50:0] volt_ch2_reg;
+reg [31:0] volt_ch1_reg;
+reg [31:0] volt_ch2_reg;
 
 // 确定正负符号位 1为负
-assign volt_sign_ch1 = (ad_ch1 < 12'b100000000000) ? 1'b1 : 1'b0;
-assign volt_sign_ch2 = (ad_ch2 < 12'b100000000000) ? 1'b1 : 1'b0;
+assign volt_sign_ch1 = (ad1_in < 12'b100000000000) ? 1'b1 : 1'b0;
+assign volt_sign_ch2 = (ad2_in < 12'b100000000000) ? 1'b1 : 1'b0;
 
 // 计算实际电压
 always @(posedge ad_clk or negedge sys_rst_n)
@@ -40,8 +40,8 @@ begin
         else
             volt_ch2_reg <= (((ad2_in - 12'b100000000000) * 20000 ) >> 13);
 
-        volt_ch1 <= volt_ch1_reg[11:0];
-        volt_ch2 <= volt_ch2_reg[11:0];
+        volt_ch1 <= volt_ch1_reg[15:0];
+        volt_ch2 <= volt_ch2_reg[15:0];
     end
 end
     

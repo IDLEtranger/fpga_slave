@@ -159,8 +159,8 @@ end
 /************** ADC **************/
 /*********************************/
 // ADC output data(mV)
-wire [11:0] volt_ch1; // voltage channel 1
-wire [11:0] volt_ch2;
+wire [15:0] volt_ch1; // voltage channel 1
+wire [15:0] volt_ch2;
 
 /*************************************/
 /************* SPI_SLAVE *************/
