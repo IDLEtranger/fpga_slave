@@ -4,7 +4,7 @@ input wire clk,
 input wire rst,
 
 // spi interface
-output reg miso,
+output wire miso,
 input mosi,
 input sclk,
 input cs_n,
@@ -29,7 +29,7 @@ localparam CHANGE_IP =  3'd5;
 localparam CHANGE_WAVEFORM =  3'd6;
 localparam FEEDBACK =  3'd7;
 
-reg[2:0] state;
+(* preserve *) reg[2:0] state;
 reg[2:0] next_state;
 reg start_finished;
 reg stop_finished;
@@ -39,8 +39,8 @@ reg change_Ip_finished;
 reg change_waveform_finished;
 reg feedback_finished;
 
-reg [7:0] received_data;
-reg received_data_valid;
+wire [7:0] received_data;
+wire received_data_valid;
 reg [3:0] received_data_cnt;
 reg [7:0] response_data;
 
@@ -154,9 +154,9 @@ begin
         Ton_data <= 16'd0;
     else if(state == CHANGE_TON)
     begin
-        if(received_data_valid && received_data_cnt == 4'd2)
+        if(received_data_valid && received_data_cnt == 4'd1)
             Ton_data[7:0] <= received_data;
-        else if(received_data_valid && received_data_cnt == 4'd3)
+        else if(received_data_valid && received_data_cnt == 4'd2)
             Ton_data[15:8] <= received_data;
     end
 end
@@ -170,6 +170,19 @@ begin
         change_Ton_finished <= 1'b0;
 end
 
+// reg [7:0] response_data;
+always@(posedge clk or negedge rst)
+begin
+    if(rst == 1'b0)
+        response_data <= 8'hff;
+    else if(state == FEEDBACK)
+        response_data <= feedback_data[7:0];
+    else if(state == FEEDBACK && received_data_valid && received_data_cnt == 4'd1)
+        response_data <= feedback_data[15:8];
+    else
+        response_data <= 8'hff;
+end
+
 //********************************************************************//
 //*************************** Instantiation **************************//
 //********************************************************************//
@@ -177,7 +190,7 @@ spi_slave_driver #(.mode(2'b00))
 spi_slave_inst
 (
     .clk(clk),
-    .rst(rst)
+    .rst(rst),
     .rec_data(received_data),
     .rec_valid(received_data_valid),
     .miso(miso),

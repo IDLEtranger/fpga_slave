@@ -12,9 +12,14 @@ module fpga_slave
     output wire ad1_clk,
     output wire ad2_clk,
     input wire [11:0] ad1_in,
-    input wire [11:0] ad2_in
+    input wire [11:0] ad2_in,
 
     /** SPI_SLAVE **/
+    input wire mosi,
+    input wire sclk,
+    input wire cs_n,
+    output wire miso
+
 );
 /* clock */
 wire sys_clk; // system clock 100MHz
@@ -167,6 +172,15 @@ wire [15:0] volt_ch2;
 /*************************************/
 /************* SPI_SLAVE *************/
 /*************************************/
+wire machine_start;
+wire machine_stop;
+
+wire [15:0] Ton_data;
+wire [15:0] Toff_data;
+wire [15:0] Ip_data;
+wire [15:0] waveform_data;
+
+reg [15:0] feedback_data;
 
 //********************************************************************//
 //*************************** Instantiation **************************//
@@ -177,7 +191,7 @@ pll	pll_inst
 	.c0 ( sys_clk ), // sys_clk 100MHz
 	.c1 ( ad_clk ) // ad_clk 65MHz
 );
-
+/*
 uart_rx#
 (
 	.CLK_FRE(CLK_FRE),
@@ -205,7 +219,7 @@ uart_tx#
 	.tx_data_ready              (tx_data_ready            ),
 	.tx_pin                     (uart_tx                  )
 );
-
+*/
 ad9238 adc_inst
 ( 
     .ad_clk (ad_clk),
@@ -215,6 +229,28 @@ ad9238 adc_inst
 
     .volt_ch1 (volt_ch1),
     .volt_ch2 (volt_ch2)
+);
+
+spi_slave_cmd spi_slave_cmd_inst
+(
+    .clk(sys_clk),
+    .rst(sys_rst_n),
+
+    // spi interface
+    .miso(miso),
+    .mosi(mosi),
+    .sclk(sclk),
+    .cs_n(cs_n),
+
+    .machine_start(machine_start),
+    .machine_stop(machine_stop),
+
+    .Ton_data(Ton_data),
+    .Toff_data(Toff_data),
+    .Ip_data(Ip_data),
+    .waveform_data(waveform_data),
+
+    .feedback_data(feedback_data)
 );
 
 endmodule
