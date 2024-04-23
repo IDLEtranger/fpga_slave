@@ -1,7 +1,7 @@
 module spi_slave_cmd
 (
 input wire clk,
-input wire rst,
+input wire rst_n,
 
 // spi interface
 output wire miso,
@@ -11,7 +11,6 @@ input cs_n,
 
 output reg machine_start,
 output reg machine_stop,
-
 output reg [15:0] Ton_data,
 output reg [15:0] Toff_data,
 output reg [15:0] Ip_data,
@@ -45,9 +44,9 @@ reg [3:0] received_data_cnt;
 reg [7:0] response_data;
 
 /******************* state *******************/
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if (rst == 1'b0)
+    if (rst_n == 1'b0)
         state <= IDLE;
     else
         state <= next_state;
@@ -70,36 +69,52 @@ begin
                     default: next_state = IDLE;
                 endcase
             end
+            else
+                next_state = IDLE;
         START:
             if(start_finished)
                 next_state = IDLE;
+            else
+                next_state = START;
         STOP:
             if(stop_finished)
                 next_state = IDLE;
+            else
+                next_state = STOP;
         CHANGE_TON:
             if(change_Ton_finished)
                 next_state = IDLE;
+            else
+                next_state = CHANGE_TON;
         CHANGE_TOFF:
             if(change_Toff_finished)
                 next_state = IDLE;
+            else
+                next_state = CHANGE_TOFF;
         CHANGE_IP:
             if(change_Ip_finished)
                 next_state = IDLE;
+            else
+                next_state = CHANGE_IP;
         CHANGE_WAVEFORM:
             if(change_waveform_finished)
                 next_state = IDLE;
+            else
+                next_state = CHANGE_WAVEFORM;
         FEEDBACK:
             if(feedback_finished)
                 next_state = IDLE;
+            else
+                next_state = FEEDBACK;
         default:
             next_state = IDLE;
     endcase
 end
 
 // received_data_cnt
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if(rst == 1'b0)
+    if(rst_n == 1'b0)
         received_data_cnt <= 4'd0;
     else if(state == IDLE)
         received_data_cnt <= 4'd0;
@@ -108,18 +123,18 @@ begin
 end
 
 // output reg machine_start
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if(rst == 1'b0)
+    if(rst_n == 1'b0)
         machine_start <= 1'b0;
     else if(state == START)
         machine_start <= 1'b1;
     else
         machine_start <= 1'b0;
 end
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if(rst == 1'b0)
+    if(rst_n == 1'b0)
         start_finished <= 1'b0;
     else if(state == START)
         start_finished <= 1'b1;
@@ -128,18 +143,18 @@ begin
 end
 
 // output reg machine_stop
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if(rst == 1'b0)
+    if(rst_n == 1'b0)
         machine_stop <= 1'b0;
     else if(state == STOP)
         machine_stop <= 1'b1;
     else
         machine_stop <= 1'b0;
 end
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if(rst == 1'b0)
+    if(rst_n == 1'b0)
         stop_finished <= 1'b0;
     else if(state == STOP)
         stop_finished <= 1'b1;
@@ -148,9 +163,9 @@ begin
 end
 
 // output reg [15:0] Ton_data
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if(rst == 1'b0)
+    if(rst_n == 1'b0)
         Ton_data <= 16'd0;
     else if(state == CHANGE_TON)
     begin
@@ -160,9 +175,9 @@ begin
             Ton_data[15:8] <= received_data;
     end
 end
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if(rst == 1'b0)
+    if(rst_n == 1'b0)
         change_Ton_finished <= 1'b0;
     else if(state == CHANGE_TON && received_data_valid && received_data_cnt == 4'd3)
         change_Ton_finished <= 1'b1;
@@ -171,9 +186,9 @@ begin
 end
 
 // reg [7:0] response_data;
-always@(posedge clk or negedge rst)
+always@(posedge clk or negedge rst_n)
 begin
-    if(rst == 1'b0)
+    if(rst_n == 1'b0)
         response_data <= 8'hff;
     else if(state == FEEDBACK)
         response_data <= feedback_data[7:0];
@@ -190,7 +205,7 @@ spi_slave_driver #(.mode(2'b00))
 spi_slave_inst
 (
     .clk(clk),
-    .rst(rst),
+    .rst_n(rst_n),
     .rec_data(received_data),
     .rec_valid(received_data_valid),
     .miso(miso),

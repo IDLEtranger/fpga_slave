@@ -1,10 +1,12 @@
 `timescale 1ns / 1ps
+`define DEBUG_MODE
+
 /*
 spi_slave_driver #(.mode(2'b00))
 spi_slave_inst
 (
     .clk(),
-    .rst()
+    .rst_n()
     .rec_data(),
     .rec_valid(),
     .miso(),
@@ -38,7 +40,7 @@ module spi_slave_driver
     
     input[7:0] response_data,
     input clk,
-    input rst
+    input rst_n
 );
     
     localparam IDLE = 0,
@@ -47,7 +49,13 @@ module spi_slave_driver
     wire finish_edge;
     wire[2:0] finish_cnt;
     wire[2:0] cnt_rise,cnt_fall;
-    wire sclk_rise, sclk_fall;
+    `ifdef DEBUG_MODE
+        (* keep *) wire sclk_rise;
+        (* keep *) wire sclk_fall;
+    `else
+        wire sclk_rise;
+        wire sclk_fall;
+    `endif
     
     reg state;
     
@@ -55,9 +63,9 @@ module spi_slave_driver
     assign finish_cnt = mode[1] ? cnt_rise : cnt_fall;
     assign cnt_rst = state == IDLE;
     
-    always@(posedge clk or posedge rst)
+    always@(posedge clk or negedge rst_n)
     begin
-        if(rst)
+        if(rst_n == 0)
             state <= IDLE;
         else if(state == IDLE && !cs_n)
             state <= WR_RD;
@@ -66,9 +74,9 @@ module spi_slave_driver
     end
     
     // miso 从最低位开始发送
-    always@(posedge clk or posedge rst)
+    always@(posedge clk or negedge rst_n)
     begin
-        if(rst) begin
+        if(rst_n == 0) begin
             miso <= 0;
             rec_data <= 0;
         end
@@ -114,9 +122,9 @@ module spi_slave_driver
         end
     end
     
-    always@(posedge clk or posedge rst)
+    always@(posedge clk or negedge rst_n)
     begin
-        if(rst)
+        if(rst_n == 0)
             rec_valid <= 0;
         else if(state == WR_RD && finish_edge && finish_cnt == 0)
             rec_valid <= 1;
@@ -129,7 +137,7 @@ module spi_slave_driver
         .seq_negedge(sclk_fall),
         .sequence_in(sclk),
         .clk(clk),
-        .rst(rst)
+        .rst_n(rst_n)
         );
         
     cnt_en #(.cnt_mode(1),.max_value(8)) CNT0(

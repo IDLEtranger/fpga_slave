@@ -6,7 +6,7 @@
         .seq_negedge(),
         .sequence_in(),
         .clk(),
-        .rst()
+        .rst_n()
         );
 */
 
@@ -16,14 +16,14 @@ module sequence_comparator_2ch #(parameter width = 2,filt_sequence0 = 2'b01,filt
     output reg seq_negedge,
     input sequence_in,
     input clk,
-    input rst
+    input rst_n
 );
     
-    reg[width-2:0] sequence_shift;
+    reg[width-1:0] sequence_shift;
     
-    always@(posedge clk or posedge rst)
+    always@(posedge clk or negedge rst_n)
     begin
-        if(rst)
+        if(rst_n == 0)
             sequence_shift <= 0;
         else
             sequence_shift <= {sequence_shift[width-2:0],sequence_in};
@@ -31,7 +31,7 @@ module sequence_comparator_2ch #(parameter width = 2,filt_sequence0 = 2'b01,filt
     
     always@(*)
     begin
-        if(rst)
+        if(rst_n == 0)
             seq_posedge = 0;
         else if({sequence_shift[width-2:0],sequence_in} == filt_sequence0)
             seq_posedge = 1;
@@ -41,7 +41,7 @@ module sequence_comparator_2ch #(parameter width = 2,filt_sequence0 = 2'b01,filt
     
     always@(*)
     begin
-        if(rst)
+        if(rst_n == 0)
             seq_negedge = 0;
         else if({sequence_shift[width-2:0],sequence_in} == filt_sequence1)
             seq_negedge = 1;

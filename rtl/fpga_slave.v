@@ -1,4 +1,6 @@
 `timescale 1ns/1ns
+`define DEBUG_MODE
+
 module fpga_slave
 (
     input wire clk_50M,
@@ -234,7 +236,7 @@ ad9238 adc_inst
 spi_slave_cmd spi_slave_cmd_inst
 (
     .clk(sys_clk),
-    .rst(sys_rst_n),
+    .rst_n(sys_rst_n),
 
     // spi interface
     .miso(miso),
