@@ -16,7 +16,7 @@ output reg [15:0] Toff_data,
 output reg [15:0] Ip_data,
 output reg [15:0] waveform_data,
 
-input wire [15:0] feedback_data
+input wire [31:0] feedback_data
 );
 
 localparam IDLE =  3'd0;
@@ -41,7 +41,10 @@ reg feedback_finished;
 wire [7:0] received_data;
 wire received_data_valid;
 reg [3:0] received_data_cnt;
+wire received_data_cnt_diff;
+wire received_data_cnt_reset;
 reg [7:0] response_data;
+(*preserve*)reg [31:0] temp_feedback_data; 
 
 /******************* state *******************/
 always@(posedge clk or negedge rst_n)
@@ -169,9 +172,9 @@ begin
         Ton_data <= 16'd0;
     else if(state == CHANGE_TON)
     begin
-        if(received_data_valid && received_data_cnt == 4'd1)
+        if(received_data_cnt == 4'd1 && received_data_cnt_diff)
             Ton_data[7:0] <= received_data;
-        else if(received_data_valid && received_data_cnt == 4'd2)
+        else if(received_data_cnt == 4'd2 && received_data_cnt_diff)
             Ton_data[15:8] <= received_data;
     end
 end
@@ -179,10 +182,79 @@ always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
         change_Ton_finished <= 1'b0;
-    else if(state == CHANGE_TON && received_data_valid && received_data_cnt == 4'd3)
+    else if(state == CHANGE_TON && received_data_cnt_diff && received_data_cnt == 4'd2)
         change_Ton_finished <= 1'b1;
     else
         change_Ton_finished <= 1'b0;
+end
+
+// output reg [15:0] Toff_data
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        Toff_data <= 16'd0;
+    else if(state == CHANGE_TOFF)
+    begin
+        if(received_data_cnt == 4'd1 && received_data_cnt_diff)
+            Toff_data[7:0] <= received_data;
+        else if(received_data_cnt == 4'd2 && received_data_cnt_diff)
+            Toff_data[15:8] <= received_data;
+    end
+end
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        change_Toff_finished <= 1'b0;
+    else if(state == CHANGE_TOFF && received_data_cnt_diff && received_data_cnt == 4'd2)
+        change_Toff_finished <= 1'b1;
+    else
+        change_Toff_finished <= 1'b0;
+end
+
+// output reg [15:0] Ip_data
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        Ip_data <= 16'd0;
+    else if(state == CHANGE_IP)
+    begin
+        if(received_data_cnt == 4'd1 && received_data_cnt_diff)
+            Ip_data[7:0] <= received_data;
+        else if(received_data_cnt == 4'd2 && received_data_cnt_diff)
+            Ip_data[15:8] <= received_data;
+    end
+end
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        change_Ip_finished <= 1'b0;
+    else if(state == CHANGE_IP && received_data_cnt_diff && received_data_cnt == 4'd2)
+        change_Ip_finished <= 1'b1;
+    else
+        change_Ip_finished <= 1'b0;
+end
+
+// output reg [15:0] waveform_data
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        waveform_data <= 16'd0;
+    else if(state == CHANGE_WAVEFORM)
+    begin
+        if(received_data_cnt == 4'd1 && received_data_cnt_diff)
+            waveform_data[7:0] <= received_data;
+        else if(received_data_cnt == 4'd2 && received_data_cnt_diff)
+            waveform_data[15:8] <= received_data;
+    end
+end
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        change_waveform_finished <= 1'b0;
+    else if(state == CHANGE_WAVEFORM && received_data_cnt_diff && received_data_cnt == 4'd2)
+        change_waveform_finished <= 1'b1;
+    else
+        change_waveform_finished <= 1'b0;
 end
 
 // reg [7:0] response_data;
@@ -191,28 +263,57 @@ begin
     if(rst_n == 1'b0)
         response_data <= 8'hff;
     else if(state == FEEDBACK)
-        response_data <= feedback_data[7:0];
-    else if(state == FEEDBACK && received_data_valid && received_data_cnt == 4'd1)
-        response_data <= feedback_data[15:8];
+    begin
+        if(received_data_cnt == 4'd0)
+            response_data <= temp_feedback_data[7:0];
+        else if(received_data_cnt == 4'd1)
+            response_data <= temp_feedback_data[15:8];
+        else if(received_data_cnt == 4'd2)
+            response_data <= temp_feedback_data[23:16];
+        else if(received_data_cnt == 4'd3)
+            response_data <= temp_feedback_data[31:24];
+    end
+end
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        temp_feedback_data <= 32'd0;
+    else if(cs_n == 1'b1)
+        temp_feedback_data <= feedback_data;
+end
+
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        feedback_finished <= 1'b0;
+    else if(state == FEEDBACK && received_data_cnt_diff && received_data_cnt == 4'd4)
+        feedback_finished <= 1'b1;
     else
-        response_data <= 8'hff;
+        feedback_finished <= 1'b0;
 end
 
 //********************************************************************//
 //*************************** Instantiation **************************//
 //********************************************************************//
-spi_slave_driver #(.mode(2'b00))
-spi_slave_inst
-(
-    .clk(clk),
-    .rst_n(rst_n),
-    .rec_data(received_data),
-    .rec_valid(received_data_valid),
-    .miso(miso),
-    .mosi(mosi),
-    .sclk(sclk),
-    .cs_n(cs_n),
-    .response_data(response_data)
-);
+    spi_slave_driver #(.mode(2'b11))
+    spi_slave_inst
+    (
+        .clk(clk),
+        .rst_n(rst_n),
+        .rec_data(received_data),
+        .rec_valid(received_data_valid),
+        .miso(miso),
+        .mosi(mosi),
+        .sclk(sclk),
+        .cs_n(cs_n),
+        .response_data(response_data)
+    );
 
+    sequence_comparator_diff #(.width(4)) SC_received_data_cnt(
+        .seq_reset(received_data_cnt_reset),
+        .seq_diff(received_data_cnt_diff),
+        .sequence_in(received_data_cnt),
+        .clk(clk),
+        .rst_n(rst_n)
+        );
 endmodule

@@ -9,6 +9,7 @@ spi_slave_inst
     .rst_n()
     .rec_data(),
     .rec_valid(),
+    .cnt_rise7(),
     .miso(),
     .mosi(),
     .sclk(),
@@ -24,7 +25,8 @@ rec_data为主机发过来的数据，由于在运行中rec_data会一直变化
 所以在rec_valid为高电平时需要将rec_data取出保存并另存
 response_data为从机响应主机数据
 mode需要和主机mode保持一致
-mode[1]为时钟极性CPOL，mode[0]为时钟相位CPHA
+mode[1] == 1时，上升沿采样
+mode[0] == 1时, 时钟空闲时为低
 */
 
 module spi_slave_driver
@@ -49,6 +51,7 @@ module spi_slave_driver
     wire finish_edge;
     wire[2:0] finish_cnt;
     wire[2:0] cnt_rise,cnt_fall;
+    
     `ifdef DEBUG_MODE
         (* keep *) wire sclk_rise;
         (* keep *) wire sclk_fall;
@@ -61,6 +64,7 @@ module spi_slave_driver
     
     assign finish_edge = mode[1] ? sclk_rise : sclk_fall;
     assign finish_cnt = mode[1] ? cnt_rise : cnt_fall;
+    wire cnt_rst;
     assign cnt_rst = state == IDLE;
     
     always@(posedge clk or negedge rst_n)
@@ -73,7 +77,6 @@ module spi_slave_driver
             state <= IDLE;
     end
     
-    // miso 从最低位开始发送
     always@(posedge clk or negedge rst_n)
     begin
         if(rst_n == 0) begin
