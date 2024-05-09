@@ -1,22 +1,28 @@
 module spi_slave_cmd
 (
-input wire clk,
-input wire rst_n,
+    input wire sys_clk, // 50MHz
+    input wire clk, // 216MHz
+    input wire rst_n,
 
-// spi interface
-output wire miso,
-input mosi,
-input sclk,
-input cs_n,
+    // spi interface
+    output wire miso,
+    input wire mosi,
+    input wire sclk,
+    input wire cs_n,
 
-output reg machine_start,
-output reg machine_stop,
-output reg [15:0] Ton_data,
-output reg [15:0] Toff_data,
-output reg [15:0] Ip_data,
-output reg [15:0] waveform_data,
+    output wire machine_start_ack,
+    output wire machine_stop_ack,
+    output reg [15:0] Ton_data,
+    output wire change_Ton_ack,
+    output reg [15:0] Toff_data,
+    output wire change_Toff_ack,
+    output reg [15:0] Ip_data,
+    output wire change_Ip_ack,
+    output reg [15:0] waveform_data,
+    output wire change_waveform_ack,
 
-input wire [31:0] feedback_data
+    input wire [31:0] feedback_data,
+    input wire change_feedback_ack
 );
 
 localparam IDLE =  3'd0;
@@ -38,6 +44,9 @@ reg change_Ip_finished;
 reg change_waveform_finished;
 reg feedback_finished;
 
+reg machine_start;
+reg machine_stop;
+
 wire [7:0] received_data;
 wire received_data_valid;
 reg [3:0] received_data_cnt;
@@ -46,7 +55,7 @@ wire received_data_cnt_reset;
 reg [7:0] response_data;
 (*preserve*)reg [31:0] temp_feedback_data; 
 
-/******************* state *******************/
+/******************* begin state shift *******************/
 always@(posedge clk or negedge rst_n)
 begin
     if (rst_n == 1'b0)
@@ -113,6 +122,7 @@ begin
             next_state = IDLE;
     endcase
 end
+/******************* end state shift *******************/
 
 // received_data_cnt
 always@(posedge clk or negedge rst_n)
@@ -169,7 +179,7 @@ end
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Ton_data <= 16'd0;
+        Ton_data <= 16'd80;
     else if(state == CHANGE_TON)
     begin
         if(received_data_cnt == 4'd1 && received_data_cnt_diff)
@@ -192,7 +202,7 @@ end
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Toff_data <= 16'd0;
+        Toff_data <= 16'd20;
     else if(state == CHANGE_TOFF)
     begin
         if(received_data_cnt == 4'd1 && received_data_cnt_diff)
@@ -215,7 +225,7 @@ end
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Ip_data <= 16'd0;
+        Ip_data <= 16'd30;
     else if(state == CHANGE_IP)
     begin
         if(received_data_cnt == 4'd1 && received_data_cnt_diff)
@@ -278,7 +288,7 @@ always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
         temp_feedback_data <= 32'd0;
-    else if(cs_n == 1'b1)
+    else if(cs_n == 1'b1 && change_feedback_ack == 1'b1)
         temp_feedback_data <= feedback_data;
 end
 
@@ -309,11 +319,62 @@ end
         .response_data(response_data)
     );
 
-    sequence_comparator_diff #(.width(4)) SC_received_data_cnt(
+    sequence_comparator_diff #(.width(4)) 
+    SC_received_data_cnt
+    (
         .seq_reset(received_data_cnt_reset),
         .seq_diff(received_data_cnt_diff),
         .sequence_in(received_data_cnt),
         .clk(clk),
         .rst_n(rst_n)
-        );
+    );
+
+    signal_extension #(.SUSTAIN_CYCLES(7)) machine_start_extend 
+    (
+        .clk(clk),
+        .rst_n(rst_n),
+        .signal(machine_start),
+        .signal_extended(machine_start_ack)
+    );
+
+    signal_extension #(.SUSTAIN_CYCLES(7)) machine_stop_extend 
+    (
+        .clk(clk),
+        .rst_n(rst_n),
+        .signal(machine_stop),
+        .signal_extended(machine_stop_ack)
+    );
+
+    signal_extension #(.SUSTAIN_CYCLES(7)) change_Ton_extend 
+    (
+        .clk(clk),
+        .rst_n(rst_n),
+        .signal(change_Ton_finished),
+        .signal_extended(change_Ton_ack)
+    );
+
+    signal_extension #(.SUSTAIN_CYCLES(7)) change_Toff_extend 
+    (
+        .clk(clk),
+        .rst_n(rst_n),
+        .signal(change_Toff_finished),
+        .signal_extended(change_Toff_ack)
+    );
+
+    signal_extension #(.SUSTAIN_CYCLES(7)) change_Ip_extend 
+    (
+        .clk(clk),
+        .rst_n(rst_n),
+        .signal(change_Ip_finished),
+        .signal_extended(change_Ip_ack)
+    );
+
+    signal_extension #(.SUSTAIN_CYCLES(7)) change_waveform_extend 
+    (
+        .clk(clk),
+        .rst_n(rst_n),
+        .signal(change_waveform_finished),
+        .signal_extended(change_waveform_ack)
+    );
+
 endmodule
