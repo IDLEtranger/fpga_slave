@@ -63,64 +63,6 @@ module IPC  (
 	output enn
 	);
 
-					
-
-//--------------------------------------------------------------			 
-//key scan
-wire [2:0] key_code;
-wire [2:0] key_code_cycle;
-wire 		  key2_down;
-wire 		  key3_down;
-key_scan u_key_scan(
-				 .clk(clk),
-				 .rst_n(rst_n),
-				
-				 .key_in(key_in),
-				 .key_code(key_code),
-				 .key_code_cycle(key_code_cycle),
-				 
-				 .key2_down(key2_down),
-				 .key3_down(key3_down)
-				);
-			 
-			
-//--------------------------------------------------------------			 
-//seg_controller
-
-
-wire [20:0] vol_ad = (ad_ch1 * 5'd28); // vol_ad=Vgap
-wire [20:0] wave_ad = ((ad_ch2 - 12'd2500) / 50; // wave_ad=Igap
-
-
-
-seg_controller u_seg_controller(
-				  .clk(clk),
-				  .rst_n(rst_n),
-				
-				//另一模块数据输入--由IPC模块输入
-			    .Start_r1(Start_r1),
-				 .Start_r2(Start_r2),
-				 .Start_r3(Start_r3),
-				 .Start_r4(Start_r4),
-				 .Vneg_r(Vneg_r),
-			    .Id_set_r(Id_set_r), 
-			    .Ton_r(Ton_r),
-			    .Ts_r(Ts_r),
-				 .T_neg_r(T_neg_r),
-			    //.Num_on_r(Num_on_r), 
-			    //.Num_off_r(Num_off_r),
-			    .Dt_r(Dt_r),
-				
-				//key 输入，根据key1的按键次数选取显示的值
-					.key_code(key_code),
-					.key_code_cycle(key_code_cycle),
-				
-				//外部数码管连接
-				  .dtube_data(seg_data),
-				  .dtube_cs_n(seg_sel)//共用到6根数码管
-				);
-
-	
 //--------------------------------------------------------------			 
 //key scan	
 wire 		  Start_r1; 
@@ -131,17 +73,11 @@ wire 		  Start_r4;
 wire [7:0] Id_set_r;
 wire [7:0] Ton_r;
 wire [15:0]Ts_r;
-//wire [7:0] Num_on_r;
-//wire [7:0] Num_off_r;
 wire [7:0] Dt_r;
 
-
-//wire [15:0] Id_set;//将Id_set设为PID控制目标电流，引出至PID模块
-wire 			panglu_en;
+wire panglu_en;
 wire [15:0] Ton;
 wire [15:0] Ts;
-//wire [7:0]  Num_on;
-//wire [7:0]  Num_off;
 wire [15:0] Dt;
 
 para_generate 

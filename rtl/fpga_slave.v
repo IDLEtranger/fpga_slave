@@ -8,10 +8,8 @@ module fpga_slave
 	input wire sys_rst_n,
     
     /** ADC **/
-    // AD芯片采样时钟
     output wire ad1_clk,
     output wire ad2_clk,
-    // AD采样值
     input wire [11:0] ad1_in,
     input wire [11:0] ad2_in,
 
@@ -23,7 +21,7 @@ module fpga_slave
 
     /** MOSFET CONTROL SIGNAL **/
     output	[7:0]	PWM,
-	output	[1:0]	PWM_Q //切断
+	output	[1:0]	PWM_Q
 );
 /* clock */
 wire clk_50M;
@@ -43,13 +41,11 @@ wire [15:0] sample_voltage;
 /*************************************/
 /************* SPI_SLAVE *************/
 /*************************************/
-// pulse_generator discharge signal, parameter
-wire machine_start;
-wire machine_stop;
-wire [15:0] Ton_data;
-wire [15:0] Toff_data;
-wire [15:0] Ip_data;
-wire [15:0] waveform_data;
+// pulse_generator discharge signal
+wire [15:0] Ton_data_async;
+wire [15:0] Toff_data_async;
+wire [15:0] Ip_data_async;
+wire [15:0] waveform_data_async;
 
 wire machine_start_ack;
 wire machine_stop_ack;
@@ -58,7 +54,14 @@ wire change_Toff_ack;
 wire change_Ip_ack;
 wire change_waveform_ack;
 
-always @(posedge clk_50M or negedge sys_rst_n)
+/*******************************************/
+/************* PULSE PARAMETER *************/
+/*******************************************/
+wire is_machine;
+wire [15:0] Ton_data;
+wire [15:0] Toff_data;
+wire [15:0] Ip_data;
+wire [15:0] waveform_data;
 
 /**************************************/
 /************* PULSE SORT *************/
@@ -107,7 +110,7 @@ ad_sample ad_sample_inst
     .ad1_in(ad1_in),
     .ad2_in(ad2_in),
 
-    .sample_current_fifo_out(sample_current),
+    .sample_current_fifo_out(sample_current), // synchronized to sys_clk
     .sample_voltage_fifo_out(sample_voltage)
 );
 
@@ -126,17 +129,43 @@ spi_slave_cmd spi_slave_cmd_inst
     .machine_start_ack(machine_start_ack),
     .machine_stop_ack(machine_stop_ack),
 
-    .Ton_data(Ton_data),
+    .Ton_data(Ton_data_async),
     .change_Ton_ack(change_Ton_ack),
-    .Toff_data(Toff_data),
+    .Toff_data(Toff_data_async),
     .change_Toff_ack(change_Toff_ack),
-    .Ip_data(Ip_data),
+    .Ip_data(Ip_data_async),
     .change_Ip_ack(change_Ip_ack),
-    .waveform_data(waveform_data),
+    .waveform_data(waveform_data_async),
     .change_waveform_ack(change_waveform_ack),
 
-    .change_feedback_ack(change_feedback_ack),
-    .feedback_data({sample_current, sample_voltage})
+    .change_feedback_ack(1'b1),
+    .feedback_data(32'h0F0F0F0F)
+);
+
+parameter_generator parameter_generator_inst
+(
+    .clk(),
+    .sys_rst_n(),
+
+    .machine_start_ack(machine_start_ack),
+    .machine_stop_ack(machine_stop_ack),
+    .is_machine(is_machine),
+
+    .change_Ton_ack(change_Ton_ack),
+    .Ton_data_async(Ton_data_async),
+    .Ton_data(Ton_data),
+    
+    .change_Toff_ack(change_Toff_ack),
+    .Toff_data_async(Toff_data_async),
+    .Toff_data(Toff_data),
+
+    .change_Ip_ack(change_Ip_ack),
+    .Ip_data_async(Ip_data_async),
+    .Ip_data(Ip_data),
+    
+    .change_waveform_ack(change_waveform_ack),
+    .waveform_data_async(waveform_data_async),
+    .waveform_data(waveform_data)
 );
 
 // pulse_sort pulse_sort_inst

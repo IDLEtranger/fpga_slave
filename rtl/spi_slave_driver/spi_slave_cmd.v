@@ -329,7 +329,8 @@ end
         .rst_n(rst_n)
     );
 
-    signal_extension #(.SUSTAIN_CYCLES(7)) machine_start_extend 
+    // 216 / 100 *1.5 = 3.24, so select sustain_cycles = 4
+    signal_extension #(.SUSTAIN_CYCLES(4)) machine_start_extend 
     (
         .clk(clk),
         .rst_n(rst_n),
@@ -337,7 +338,7 @@ end
         .signal_extended(machine_start_ack)
     );
 
-    signal_extension #(.SUSTAIN_CYCLES(7)) machine_stop_extend 
+    signal_extension #(.SUSTAIN_CYCLES(4)) machine_stop_extend 
     (
         .clk(clk),
         .rst_n(rst_n),
@@ -345,7 +346,7 @@ end
         .signal_extended(machine_stop_ack)
     );
 
-    signal_extension #(.SUSTAIN_CYCLES(7)) change_Ton_extend 
+    signal_extension #(.SUSTAIN_CYCLES(4)) change_Ton_extend 
     (
         .clk(clk),
         .rst_n(rst_n),
@@ -353,7 +354,7 @@ end
         .signal_extended(change_Ton_ack)
     );
 
-    signal_extension #(.SUSTAIN_CYCLES(7)) change_Toff_extend 
+    signal_extension #(.SUSTAIN_CYCLES(4)) change_Toff_extend 
     (
         .clk(clk),
         .rst_n(rst_n),
@@ -361,7 +362,7 @@ end
         .signal_extended(change_Toff_ack)
     );
 
-    signal_extension #(.SUSTAIN_CYCLES(7)) change_Ip_extend 
+    signal_extension #(.SUSTAIN_CYCLES(4)) change_Ip_extend 
     (
         .clk(clk),
         .rst_n(rst_n),
@@ -369,7 +370,7 @@ end
         .signal_extended(change_Ip_ack)
     );
 
-    signal_extension #(.SUSTAIN_CYCLES(7)) change_waveform_extend 
+    signal_extension #(.SUSTAIN_CYCLES(4)) change_waveform_extend 
     (
         .clk(clk),
         .rst_n(rst_n),
