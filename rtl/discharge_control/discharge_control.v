@@ -1,22 +1,10 @@
-`timescale 1ns / 1ps
-//电流起点检测，记录该点时刻，再加上定值Ton，来控制电流峰值
-module IPC  (
-	// 开发板上输入时钟: 50Mhz
-	input	           clk,              
-	input            rst_n,
-	
-	//丝速达到信号
-	input            silk_reach,          
+// 电流起点检测，记录该点时刻，再加上定值Ton，来控制电流峰值
+module discharge_control (
+	input clk,
+	input rst_n,
 
 	//ad module
-	input [11:0] ad_ch1,
-	input [11:0] ad_ch2,
-
-
-	//Board peripheral interface		
-	input [2:0]     key_in,           // 输入按键信号(KEY1~KEY4)				
-	output [5:0]     seg_sel,
-	output [7:0]     seg_data,
+	input [31:0] sample_data, // {sample_current_fifo_out, sample_voltage_fifo_out}
 	
 	//can_protocol_analyze模块接口
 	input 		  can_para_en,

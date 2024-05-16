@@ -1,20 +1,20 @@
 module ad_sample
 (
-    input sys_clk, // 50MHz
+    input sys_clk,
     input ad_clk, // 65MHz
     input rst_n,
 
     input wire [11:0] ad1_in,
     input wire [11:0] ad2_in,
 
-    output wire [15:0] sample_current_fifo_out,
-    output wire [15:0] sample_voltage_fifo_out
+    output wire signed [15:0] sample_current_fifo_out,
+    output wire signed [15:0] sample_voltage_fifo_out
 );
-wire [15:0] volt_ch1;
-wire [15:0] volt_ch2;
+wire signed [15:0] volt_ch1;
+wire signed [15:0] volt_ch2;
 
-wire [15:0] sample_current;
-wire [15:0] sample_voltage;
+wire signed [15:0] sample_current;
+wire signed [15:0] sample_voltage;
 
 //********************************************************************//
 //*************************** Instantiation **************************//
@@ -31,7 +31,7 @@ wire [15:0] sample_voltage;
 
     samplevolt2realvalue samplevolt2realvalue_inst
     (
-        .clk(ad_clk),
+        .ad_clk(ad_clk),
         .rst_n(rst_n),
         .volt_ch1(volt_ch1),
         .volt_ch2(volt_ch2),
