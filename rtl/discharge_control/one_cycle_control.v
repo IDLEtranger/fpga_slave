@@ -1,9 +1,10 @@
-//fs = 250kHz(4us)   L = 3.3uH
+// fs = 250kHz(4us)   L = 3.3uH
+// output delay 6 cycles
 module one_cycle_control
 #(
-	parameter Vin = 16'd120; // input voltage 120V
-	parameter L = 16'd3300; // inductance(uH) 3.3uH = 3300nH
-	parameter fs = 16'd250; // frequency 250kHz (Ts = 4us)
+	parameter Vin = 16'd120, // input voltage 120V
+	parameter L = 16'd3300, // inductance(uH) 3.3uH = 3300nH
+	parameter fs = 16'd250 // frequency 250kHz (Ts = 4us)
 )
 (
 	input clk,
@@ -13,40 +14,30 @@ module one_cycle_control
 	input [15:0] sample_voltage, // 滤波后的电压
 
 	input [15:0] timer_buck_4us_0,
-	input [15:0] timer_buck_interleave,
 
 	input [15:0] i_set, //实际总电流设定值，需要准换成单路电流参考值iref=i_set/4路
 		
 	output reg [15:0] inductor_charging_time
 );
 
-reg [7:0] i_ref; // 根据电流设定值计算出的单路电流参考值，用于单周期占空比计算
-
-// i_ref
-always@(*)
-begin
-	if(rst_n == 1'b0)
-		i_ref = 8'd0;
-	else if(i_set > 100)
-		i_ref = 8'd25;
-	else
-		i_ref = i_set >> 1; // i_ref = i_set / 2 (2 channels)
-end
-
+reg [15:0] sample_current_reg;
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
-		sample_current <= 13'd0;
+		sample_current_reg <= 13'd0;
 	else 
 	begin
 		if(sample_current < 0)
-			sample_current <= 16'd0;
+			sample_current_reg <= 16'd0;
+		else
+			sample_current_reg <= sample_current;
 	end
 end
 
 //每个开关频率开始时刻触发采样
 reg [15:0] Id_in_Ts;
 reg	[15:0] V_gap;
+reg [7:0] i_ref; // 根据电流设定值计算出的单路电流参考值，用于单周期占空比计算
 
 always@(posedge clk or negedge rst_n)
 begin
@@ -54,14 +45,19 @@ begin
 	begin
 		Id_in_Ts <= 12'd0;
 		V_gap <= 12'd0;
+		i_ref <= 8'd0;
 	end
 	else
 	begin
 		if(timer_buck_4us_0 == 16'b0)
 		begin
-			Id_in_Ts <= sample_current;
+			Id_in_Ts <= sample_current_reg;
 			// V_gap <= sample_voltage;
 			V_gap <= 16'd25; // set a fixed discharge gap voltage value for test
+			if(i_set > 100)
+				i_ref <= 8'd50;
+			else
+				i_ref <= i_set >> 1; // i_ref = i_set / 2 (2 channels)
 		end
 	end
 end
@@ -102,7 +98,7 @@ begin
 
 	else
 	begin
-		numerator1 <= V_gap * (Vin_Vgap); // Vgap*(Vin - Vgap)
+		numerator1 <= V_gap * (Vin_Vgap) * 1_000_000; // Vgap*(Vin - Vgap)
 		numerator2 <= Vinx2 * Lxfsx106 * iref_id_i; // 2*Vin*L*fs*(i_ref - id_i)*10^6
 		denominator1 <= Vinx2 * Vin_Vgap; // 2Vin*(Vin - Vgap)
 	end
@@ -136,7 +132,6 @@ begin
 		inductor_charging_time_reg <= inductor_charging_time_x1000000 * 400 / 1_000_000 ; // 4us = 400 clk
 end
 
-reg [15:0] inductor_charging_time;
 always@(posedge clk or negedge rst_n)  
 begin
 	if(rst_n == 1'b0)
@@ -146,11 +141,10 @@ begin
 		if((inductor_charging_time_reg > 16'd400))
 			inductor_charging_time <= 16'd0;
 		else if((inductor_charging_time_reg > 13'd200 )&&(inductor_charging_time_reg <= 13'd400))
-			inductor_charging_time <= 16'd200;
+			inductor_charging_time <= 16'd200; // keep the inductor charging time below 200
 		else
 			inductor_charging_time <= inductor_charging_time_reg[15:0];
 	end
 end
 
 endmodule
-

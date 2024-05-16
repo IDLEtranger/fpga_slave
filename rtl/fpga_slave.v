@@ -168,6 +168,22 @@ parameter_generator parameter_generator_inst
     .waveform_data(waveform_data)
 );
 
+reg [15:0] timer_buck_4us_0;
+reg [15:0] timer_buck_interleave;
+reg [15:0] i_set;
+wire [15:0] inductor_charging_time;
+
+// 实例化被测试模块
+one_cycle_control one_cycle_control_inst (
+    .clk(clk_100M),
+    .rst_n(sys_rst_n),
+    .sample_current(sample_current),
+    .sample_voltage(sample_voltage),
+    .timer_buck_4us_0(timer_buck_4us_0),
+    .i_set(i_set),
+    .inductor_charging_time(inductor_charging_time)
+);
+
 // pulse_sort pulse_sort_inst
 // (
 //     .clk(clk_50M),

@@ -57,15 +57,11 @@ end
 always @(posedge clk or negedge sys_rst_n)
 begin
     if(sys_rst_n == 1'b0)
-    begin
         is_machine <= 1'b0;
-    end
     else if( machine_start_ack_stage[2] == 1'b1 )
-    begin
         is_machine <= 1'b1;
     else if( machine_stop_ack_stage[2] == 1'b1 )
         is_machine <= 1'b0;
-    end
 end
 
 always @(posedge clk or negedge sys_rst_n)
