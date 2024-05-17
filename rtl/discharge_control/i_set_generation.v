@@ -11,15 +11,19 @@ module i_set_generation
             waveform[1] == 1 : buck rectangle discharge
             waveform[2] == 1 : buck triangle discharge
 	*/
-    input [15:0] Ton, // discharge time (us)
+    input [15:0] Ton_timer, // discharge time (us)
     input [15:0] Ip, // specified current
-    input [15:0] timer_buck_interleave;
+    input [15:0] timer_buck_interleave,
 
     output reg [15:0] i_set
 );
 localparam IDLE = 	8'b00000000;
-localparam RECTANGLE_WAVE = 8'b10000001;
+localparam RECTANGLE_WAVE = 8'b00000001;
 localparam TRIANGLE_WAVE = 8'b00000010;
+
+localparam BUCK_RECTANGLE_WAVE = 16'b0000_0000_0000_0001;
+localparam BUCK_TRIANGLE_WAVE = 16'b0000_0000_0000_0010;
+localparam RESISTOR_DISCHARGE_WAVE = 16'b1000_0000_0000_0000;
 
 reg [7:0] current_state;
 reg [7:0] next_state;
@@ -36,62 +40,57 @@ always@(*)
 begin
 	case(current_state)
 		IDLE:
-		begin	
-			if(waveform[15] != 1'b1)
+		begin
+            if(timer_buck_interleave == 0)
+                next_state <= IDLE;
+			else if(waveform != RESISTOR_DISCHARGE_WAVE)
             begin
-                if(waveform == 16'h0002)
+                if(waveform == BUCK_RECTANGLE_WAVE)
                     next_state <= RECTANGLE_WAVE;
-                else if(waveform == 16'h0004)
+                else if(waveform == BUCK_TRIANGLE_WAVE)
                     next_state <= TRIANGLE_WAVE;
                 else
                     next_state <= IDLE;
             end
+            else
+                next_state <= IDLE;
 		end
 
 		RECTANGLE_WAVE:
 		begin
-            if(timer_buck_interleave >= Ton)
+            if(timer_buck_interleave >= Ton_timer)
                 next_state <= IDLE;
         end
 
         TRIANGLE_WAVE:
 		begin
-            if (timer_buck_interleave >= Ton)
+            if (timer_buck_interleave >= Ton_timer)
                 next_state <= IDLE;
         end
 
     endcase
 end
 
-reg [15:0] current_ip;
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
     begin
-        current_ip <= 16'd0;
+        i_set <= 16'd0;
     end
     else
     begin
-        if(current_state == TRIANGLE_WAVE && timer_buck_interleave < Ton)
+        if(current_state == IDLE)
+            i_set <= Ip;
+        else if(current_state == RECTANGLE_WAVE)
+            i_set <= Ip;
+        else if(current_state == TRIANGLE_WAVE)
         begin
-            if (timer_buck_interleave < Ton / 2)
-                current_ip <= (Ip * timer_buck_interleave) / (Ton / 2);
+            if (timer_buck_interleave < Ton_timer / 2)
+                i_set <= (Ip * timer_buck_interleave) / (Ton_timer / 2);
             else
-                current_ip <= Ip - (Ip * (timer_buck_interleave - Ton / 2)) / (Ton / 2);
+                i_set <= Ip - (Ip * (timer_buck_interleave - Ton_timer / 2)) / (Ton_timer / 2);
         end
     end
-end
-
-always@(posedge clk or negedge rst_n)
-begin
-    if(rst_n == 1'b0)
-        i_set <= 16'd0;
-    else if(current_state == RECTANGLE_WAVE)
-        i_set <= Ip;
-    else if(current_state == TRIANGLE_WAVE)
-        i_set <= current_ip;
-    else
-        i_set <= 16'd0;
 end
 
 endmodule

@@ -1,6 +1,6 @@
 module spi_slave_cmd
 (
-    input wire sys_clk, // 50MHz
+    input wire sys_clk, // 100MHz
     input wire clk, // 216MHz
     input wire rst_n,
 
@@ -12,16 +12,16 @@ module spi_slave_cmd
 
     output wire machine_start_ack,
     output wire machine_stop_ack,
-    output reg [15:0] Ton_data,
+    output reg [15:0] Ton_data_async,
     output wire change_Ton_ack,
-    output reg [15:0] Toff_data,
+    output reg [15:0] Toff_data_async,
     output wire change_Toff_ack,
-    output reg [15:0] Ip_data,
+    output reg [15:0] Ip_data_async,
     output wire change_Ip_ack,
-    output reg [15:0] waveform_data,
+    output reg [15:0] waveform_data_async,
     output wire change_waveform_ack,
 
-    input wire [31:0] feedback_data,
+    input wire [31:0] feedback_data_async,
     input wire change_feedback_ack
 );
 
@@ -175,17 +175,17 @@ begin
         stop_finished <= 1'b0;
 end
 
-// output reg [15:0] Ton_data
+// output reg [15:0] Ton_data_async
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Ton_data <= 16'd80;
+        Ton_data_async <= 16'd80;
     else if(state == CHANGE_TON)
     begin
         if(received_data_cnt == 4'd1 && received_data_cnt_diff)
-            Ton_data[7:0] <= received_data;
+            Ton_data_async[7:0] <= received_data;
         else if(received_data_cnt == 4'd2 && received_data_cnt_diff)
-            Ton_data[15:8] <= received_data;
+            Ton_data_async[15:8] <= received_data;
     end
 end
 always@(posedge clk or negedge rst_n)
@@ -198,17 +198,17 @@ begin
         change_Ton_finished <= 1'b0;
 end
 
-// output reg [15:0] Toff_data
+// output reg [15:0] Toff_data_async
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Toff_data <= 16'd20;
+        Toff_data_async <= 16'd20;
     else if(state == CHANGE_TOFF)
     begin
         if(received_data_cnt == 4'd1 && received_data_cnt_diff)
-            Toff_data[7:0] <= received_data;
+            Toff_data_async[7:0] <= received_data;
         else if(received_data_cnt == 4'd2 && received_data_cnt_diff)
-            Toff_data[15:8] <= received_data;
+            Toff_data_async[15:8] <= received_data;
     end
 end
 always@(posedge clk or negedge rst_n)
@@ -221,17 +221,17 @@ begin
         change_Toff_finished <= 1'b0;
 end
 
-// output reg [15:0] Ip_data
+// output reg [15:0] Ip_data_async
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Ip_data <= 16'd30;
+        Ip_data_async <= 16'd30;
     else if(state == CHANGE_IP)
     begin
         if(received_data_cnt == 4'd1 && received_data_cnt_diff)
-            Ip_data[7:0] <= received_data;
+            Ip_data_async[7:0] <= received_data;
         else if(received_data_cnt == 4'd2 && received_data_cnt_diff)
-            Ip_data[15:8] <= received_data;
+            Ip_data_async[15:8] <= received_data;
     end
 end
 always@(posedge clk or negedge rst_n)
@@ -244,17 +244,17 @@ begin
         change_Ip_finished <= 1'b0;
 end
 
-// output reg [15:0] waveform_data
+// output reg [15:0] waveform_data_async
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        waveform_data <= 16'd0;
+        waveform_data_async <= 16'd0;
     else if(state == CHANGE_WAVEFORM)
     begin
         if(received_data_cnt == 4'd1 && received_data_cnt_diff)
-            waveform_data[7:0] <= received_data;
+            waveform_data_async[7:0] <= received_data;
         else if(received_data_cnt == 4'd2 && received_data_cnt_diff)
-            waveform_data[15:8] <= received_data;
+            waveform_data_async[15:8] <= received_data;
     end
 end
 always@(posedge clk or negedge rst_n)
@@ -284,12 +284,21 @@ begin
             response_data <= temp_feedback_data[31:24];
     end
 end
+
+reg [2:0] change_feedback_ack_stage;
+always@(posedge clk or negedge rst_n)
+begin
+    if(rst_n == 1'b0)
+        change_feedback_ack_stage <= 3'b0;
+    else
+        change_feedback_ack_stage <= {change_feedback_ack_stage[1:0], change_feedback_ack};
+end
 always@(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
         temp_feedback_data <= 32'd0;
-    else if(cs_n == 1'b1 && change_feedback_ack == 1'b1)
-        temp_feedback_data <= feedback_data;
+    else if(cs_n == 1'b1 && change_feedback_ack_stage[2] == 1'b1)
+        temp_feedback_data <= feedback_data_async;
 end
 
 always@(posedge clk or negedge rst_n)

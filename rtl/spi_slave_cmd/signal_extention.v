@@ -2,7 +2,7 @@
     extend signal to sustain for a few cycles
 */
 module signal_extension #(
-    parameter SUSTAIN_CYCLES = 7
+    parameter SUSTAIN_CYCLES = 7 // Exceeds 1.5x target clock period
 )
 (
     input clk,

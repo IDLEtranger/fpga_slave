@@ -15,7 +15,7 @@ module one_cycle_control
 
 	input [15:0] timer_buck_4us_0,
 
-	input [15:0] i_set, //实际总电流设定值，需要准换成单路电流参考值iref=i_set/4路
+	input [15:0] i_set, //实际总电流设定值，需要准换成单路电流参考值iref=i_set/2路
 		
 	output reg [15:0] inductor_charging_time
 );
@@ -52,8 +52,8 @@ begin
 		if(timer_buck_4us_0 == 16'b0)
 		begin
 			Id_in_Ts <= sample_current_reg;
-			// V_gap <= sample_voltage;
-			V_gap <= 16'd25; // set a fixed discharge gap voltage value for test
+			V_gap <= sample_voltage;
+			// V_gap <= 16'd25; // set a fixed discharge gap voltage value for test
 			if(i_set > 100)
 				i_ref <= 8'd50;
 			else

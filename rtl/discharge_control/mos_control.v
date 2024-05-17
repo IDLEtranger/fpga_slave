@@ -4,7 +4,6 @@ module mos_control
 	parameter WAIT_BREAKDOWN_MAXTIME = 16'd1000,
 	parameter WAIT_BREAKDOWN_MINTIME = 16'd50,
 	parameter MAX_CURRENT_LIMIT = 16'd38,
-	parameter CURRENT_FALL_THRESHOLD = 16'd5,
 	parameter BREAKDOWN_THRESHOLD_CUR = 16'd10,
 	parameter BREAKDOWN_THRESHOLD_VOL = 12'd30
 )
@@ -13,12 +12,12 @@ module mos_control
 	input rst_n,
 
 	// pulse generate parameter
-	input is_machine_start, // 1'b1: machine start, 1'b0: machine stop
+	input is_machine, // 1'b1: machine start, 1'b0: machine stop
 	input [15:0] waveform,
 	/*
-		waveform[15] == 1 : resister discharge
-		waveform[1] == 1 : buck rectangle discharge
-		waveform[2] == 1 : buck triangle discharge
+		16'b1000 0000 0000 0000 : resister discharge
+		16'b0000 0000 0000 0001 : buck rectangle discharge
+		16'b0000 0000 0000 0010 : buck triangle discharge
 	*/
 	input [15:0] Ip, // specified current	
 	input [15:0] Ton, // discharge time (us)
@@ -35,10 +34,6 @@ module mos_control
 	output reg [1:0] mosfet_res2, // Res2:上管 下管
 	output reg mosfet_deion // Qoff 消电离回路
 );
-
-localparam BUCK_RECTANGLE_WAVE = 16'd0;
-localparam BUCK_TRIANGLE_WAVE = 16'd1;
-localparam RESISTOR_DISCHARGE_WAVE = 16'd2;
 
 // current correction
 reg signed [15:0] corrected_current;
@@ -79,11 +74,32 @@ always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0) 
 		is_operation <= 1'b1;
-	else if((is_overcurrent) || (is_machine_start == 1'b0))
+	else if((is_overcurrent) || (is_machine == 1'b0))
 		is_operation <= 1'b0;
 	else 
 		is_operation <= 1'b1;
 end
+
+/************************** timer define **************************/
+reg [15:0] timer_wait_breakdown; // in S_WAIT_BREAKDOWN every 10ns ++, reset when leave S_WAIT_BREAKDOWN
+reg [15:0] timer_deion; // in S_DEION every 10ns ++, reset when leave S_DEION
+
+// buck wave timer
+reg [15:0] timer_buck_4us_0; // in S_BUCK_INTERLEAVE every 10ns ++, reset every 4us
+reg [15:0] timer_buck_4us_180; // reset when timer_buck_4us_0 reaches 2us, ends in inductor_charging_time_0 + DEAD_TIME + DEAD_TIME
+
+reg [15:0] timer_buck_interleave; // in S_BUCK_INTERLEAVE every 10ns ++, reset when leave S_BUCK_INTERLEAVE
+
+// res discharge timer
+reg [15:0] timer_res_discharge; // in S_RES_DISCHARGE every 10ns ++, reset when leave S_RES_DISCHARGE
+
+// Ton Toff
+reg [15:0] Ton_timer;
+reg [15:0] Toff_timer;
+
+// induction charging time
+wire [15:0] inductor_charging_time_0;
+reg [15:0] inductor_charging_time_180;
 
 /******************* state shift *******************/
 localparam S_WAIT_BREAKDOWN = 	8'b00000001;
@@ -172,7 +188,6 @@ begin
 		mosfet_res1 <= 2'b00;
 		mosfet_res2 <= 2'b00;
 		mosfet_deion <= 1'b0;
-		inductor_charging_time_0 <= 16'd0;
 	end
 	else
 	begin
@@ -184,7 +199,6 @@ begin
 				mosfet_res1 <= 2'b10; // wait for discharge, RES1: Qup turn on Qdown turn off
 				mosfet_res2 <= 2'b00;
 				mosfet_deion <= 1'b0;
-				inductor_charging_time_0 <= 16'd0;
 			end
 
 			S_DEION: // The state of mosfet is uncertain when entering the S_DEION state
@@ -259,21 +273,6 @@ begin
 end
 
 // timer
-reg [15:0] timer_wait_breakdown; // in S_WAIT_BREAKDOWN every 10ns ++, reset when leave S_WAIT_BREAKDOWN
-reg [15:0] timer_deion; // in S_DEION every 10ns ++, reset when leave S_DEION
-
-// buck wave timer
-reg [15:0] timer_buck_4us_0; // in S_BUCK_INTERLEAVE every 10ns ++, reset every 4us
-reg [15:0] timer_buck_4us_180; // reset when timer_buck_4us_0 reaches 2us, ends in inductor_charging_time_0 + DEAD_TIME + DEAD_TIME
-
-reg [15:0] timer_buck_interleave; // in S_BUCK_INTERLEAVE every 10ns ++, reset when leave S_BUCK_INTERLEAVE
-
-// res discharge timer
-reg [15:0] timer_res_discharge; // in S_RES_DISCHARGE every 10ns ++, reset when leave S_RES_DISCHARGE
-
-// Ton Toff
-reg [15:0] Ton_timer;
-reg [15:0] Toff_timer;
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
@@ -365,9 +364,8 @@ end
 //********************************************************************//
 //*************************** Instantiation **************************//
 //********************************************************************//
+wire [15:0] i_set;
 // one_cycle_control
-reg [15:0] inductor_charging_time_0;
-reg [15:0] inductor_charging_time_180;
 reg [15:0] shift_reg[199:0];
 integer i;
 always@(posedge clk or negedge rst_n) 
@@ -387,12 +385,12 @@ begin
     end
 end
 
-one_cycle_control one_cycle_control_inst
+one_cycle_control
 #(
 	.Vin( 16'd120 ), // input voltage 120V
 	.L( 16'd3300 ), // inductance(uH) 3.3uH = 3300nH
 	.fs( 16'd250 ) // frequency 250kHz (Ts = 4us)
-)
+) one_cycle_control_inst
 (
 	.clk( clk ),
 	.rst_n( rst_n ),
@@ -402,20 +400,19 @@ one_cycle_control one_cycle_control_inst
 
 	.timer_buck_4us_0( timer_buck_4us_0 ),
 
-	.i_set( i_set ), //实际总电流设定值，需要准换成单路电流参考值iref=i_set/4路
-		
+	.i_set( i_set ), // iref=i_set/2
+
 	.inductor_charging_time( inductor_charging_time_0 )
 );
 
 // I_set generation
-reg [15:0] i_set;
 i_set_generation iset_generation_inst
 (
 	.clk( clk ),
 	.rst_n( rst_n ),
 
 	.waveform( waveform ),
-	.Ton( Ton_timer ),
+	.Ton_timer( Ton_timer ),
 	.Ip( Ip ),
 	.timer_buck_interleave( timer_buck_interleave ),
 
