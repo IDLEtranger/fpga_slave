@@ -9,7 +9,6 @@ spi_slave_inst
     .rst_n()
     .rec_data(),
     .rec_valid(),
-    .cnt_rise7(),
     .miso(),
     .mosi(),
     .sclk(),

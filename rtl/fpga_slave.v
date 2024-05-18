@@ -25,10 +25,17 @@ module fpga_slave
 	output wire mosfet_deion // Qoff 消电离回路
 );
 /* clock */
-wire clk_50M;
-wire clk_65M;
-wire clk_100M;
-wire clk_216M;
+`ifdef DEBUG_MODE
+    (* preserve *) wire clk_50M;
+    (* preserve *) wire clk_65M;
+    (* preserve *) wire clk_100M;
+    (* preserve *) wire clk_216M;
+`else
+    wire clk_50M;
+    wire clk_65M;
+    wire clk_100M;
+    wire clk_216M;
+`endif
 
 assign ad1_clk = clk_65M;
 assign ad2_clk = clk_65M;
@@ -117,8 +124,7 @@ ad_sample ad_sample_inst
 
 spi_slave_cmd spi_slave_cmd_inst
 (
-    .sys_clk(clk_100M),
-    .clk(sys_clk_216M),
+    .clk(clk_216M),
     .rst_n(sys_rst_n),
 
     // spi interface
@@ -145,7 +151,7 @@ spi_slave_cmd spi_slave_cmd_inst
 
 discharge_control discharge_ctrl_inst
 (
-    .clk(clk),
+    .clk(clk_100M),
     .rst_n(sys_rst_n),
 
     // parameter in

@@ -1,6 +1,5 @@
 module spi_slave_cmd
 (
-    input wire sys_clk, // 100MHz
     input wire clk, // 216MHz
     input wire rst_n,
 
@@ -34,26 +33,46 @@ localparam CHANGE_IP =  3'd5;
 localparam CHANGE_WAVEFORM =  3'd6;
 localparam FEEDBACK =  3'd7;
 
-(* preserve *) reg[2:0] state;
-reg[2:0] next_state;
-reg start_finished;
-reg stop_finished;
-reg change_Ton_finished;
-reg change_Toff_finished;
-reg change_Ip_finished;
-reg change_waveform_finished;
-reg feedback_finished;
+`ifdef DEBUG_MODE
+    (* preserve *) reg[2:0] state;
+    (* preserve *) reg[2:0] next_state;
+    (* preserve *) reg start_finished;
+    (* preserve *) reg stop_finished;
+    (* preserve *) reg change_Ton_finished;
+    (* preserve *) reg change_Toff_finished;
+    (* preserve *) reg change_Ip_finished;
+    (* preserve *) reg change_waveform_finished;
+    (* preserve *) reg feedback_finished;
+    (* preserve *) reg machine_start;
+    (* preserve *) reg machine_stop;
+    (* preserve *) wire [7:0] received_data;
+    (* preserve *) wire received_data_valid;
+    (* preserve *) reg [3:0] received_data_cnt;
+    (* preserve *) wire received_data_cnt_diff;
+    (* preserve *) wire received_data_cnt_reset;
+    (* preserve *) reg [7:0] response_data;
+    (* preserve *) reg [31:0] temp_feedback_data; 
+`else
+    reg[2:0] state;
+    reg[2:0] next_state;
+    reg start_finished;
+    reg stop_finished;
+    reg change_Ton_finished;
+    reg change_Toff_finished;
+    reg change_Ip_finished;
+    reg change_waveform_finished;
+    reg feedback_finished;
 
-reg machine_start;
-reg machine_stop;
-
-wire [7:0] received_data;
-wire received_data_valid;
-reg [3:0] received_data_cnt;
-wire received_data_cnt_diff;
-wire received_data_cnt_reset;
-reg [7:0] response_data;
-(*preserve*)reg [31:0] temp_feedback_data; 
+    reg machine_start;
+    reg machine_stop;
+    wire [7:0] received_data;
+    wire received_data_valid;
+    reg [3:0] received_data_cnt;
+    wire received_data_cnt_diff;
+    wire received_data_cnt_reset;
+    reg [7:0] response_data;
+    reg [31:0] temp_feedback_data; 
+`endif
 
 /******************* begin state shift *******************/
 always@(posedge clk or negedge rst_n)
@@ -283,6 +302,8 @@ begin
         else if(received_data_cnt == 4'd3)
             response_data <= temp_feedback_data[31:24];
     end
+    else
+        response_data <= 8'hff;
 end
 
 reg [2:0] change_feedback_ack_stage;

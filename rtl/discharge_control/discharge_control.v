@@ -35,11 +35,19 @@ module discharge_control
 //*************************** Instantiation **************************//
 //********************************************************************//
 // input signal
-wire is_machine;
-wire [15:0] Ton_data;
-wire [15:0] Toff_data;
-wire [15:0] Ip_data;
-wire [15:0] waveform_data;
+`ifdef DEBUG_MODE
+    (* preserve *) wire is_machine;
+	(* preserve *) wire [15:0] Ton_data;
+	(* preserve *) wire [15:0] Toff_data;
+	(* preserve *) wire [15:0] Ip_data;
+	(* preserve *) wire [15:0] waveform_data;
+`else
+    wire is_machine;
+	wire [15:0] Ton_data;
+	wire [15:0] Toff_data;
+	wire [15:0] Ip_data;
+	wire [15:0] waveform_data;
+`endif
 
 mos_control
 #(
