@@ -4,8 +4,10 @@ module discharge_control
 	input rst_n,
 
 	// parameter in
-    input wire machine_start_ack,
-    input wire machine_stop_ack,
+    input wire machine_start_ack_spi,
+    input wire machine_stop_ack_spi,
+	input wire machine_start_ack_key,
+    input wire machine_stop_ack_key,
 
     input wire change_Ton_ack,
     input wire [15:0] Ton_data_async,
@@ -36,18 +38,34 @@ module discharge_control
 //********************************************************************//
 // input signal
 `ifdef DEBUG_MODE
-    (* preserve *) wire is_machine;
+	(* preserve *) wire is_machine;
+	(* preserve *) reg is_machine_key;
+    (* preserve *) wire is_machine_spi;
 	(* preserve *) wire [15:0] Ton_data;
 	(* preserve *) wire [15:0] Toff_data;
 	(* preserve *) wire [15:0] Ip_data;
 	(* preserve *) wire [15:0] waveform_data;
 `else
-    wire is_machine;
+	wire is_machine;
+	reg is_machine_key;
+    wire is_machine_spi;
 	wire [15:0] Ton_data;
 	wire [15:0] Toff_data;
 	wire [15:0] Ip_data;
 	wire [15:0] waveform_data;
 `endif
+
+always@(posedge clk or negedge rst_n)
+begin
+	if(rst_n == 1'b0)
+		is_machine_key <= 1'b0;
+	else if(machine_start_ack_key == 1'b1)
+		is_machine_key <= 1'b1;
+	else if(machine_stop_ack_key == 1'b1)
+		is_machine_key <= 1'b0;
+end
+
+assign is_machine = (is_machine_spi && is_machine_key);
 
 mos_control
 #(
@@ -92,9 +110,9 @@ parameter_generator param_gen_inst
 	.clk(clk),
 	.rst_n(rst_n),
 
-	.machine_start_ack(machine_start_ack),
-	.machine_stop_ack(machine_stop_ack),
-	.is_machine(is_machine),
+	.machine_start_ack(machine_start_ack_spi),
+	.machine_stop_ack(machine_stop_ack_spi),
+	.is_machine(is_machine_spi),
 
 	.change_Ton_ack(change_Ton_ack),
 	.Ton_data_async(Ton_data_async),

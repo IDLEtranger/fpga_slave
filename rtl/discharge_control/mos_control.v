@@ -73,11 +73,11 @@ reg is_operation;
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0) 
-		is_operation <= 1'b1;
-	else if((is_overcurrent) || (is_machine == 1'b0))
 		is_operation <= 1'b0;
-	else 
+	else if((is_overcurrent == 1'b0) && (is_machine == 1'b1))
 		is_operation <= 1'b1;
+	else 
+		is_operation <= 1'b0;
 end
 
 /************************** timer define **************************/

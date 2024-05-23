@@ -5,6 +5,10 @@ module fpga_slave
     input wire clk_in,
 	input wire sys_rst_n,
     
+    /** KEY **/
+    input wire key_start,
+    input wire key_stop,
+
     /** ADC **/
     output wire ad1_clk,
     output wire ad2_clk,
@@ -41,10 +45,21 @@ assign ad1_clk = clk_65M;
 assign ad2_clk = clk_65M;
 
 /*********************************/
+/************** KEY **************/
+/*********************************/
+wire machine_stop_ack_key;
+wire machine_start_ack_key;
+
+/*********************************/
 /************** ADC **************/
 /*********************************/
-wire [15:0] sample_current;
-wire [15:0] sample_voltage;
+`ifdef DEBUG_MODE
+    (* preserve *) wire [15:0] sample_current;
+    (* preserve *) wire [15:0] sample_voltage;
+`else
+    wire [15:0] sample_current;
+    wire [15:0] sample_voltage;
+`endif
 
 /*************************************/
 /************* SPI_SLAVE *************/
@@ -133,8 +148,8 @@ spi_slave_cmd spi_slave_cmd_inst
     .sclk(sclk),
     .cs_n(cs_n),
 
-    .machine_start_ack(machine_start_ack),
-    .machine_stop_ack(machine_stop_ack),
+    .machine_start_ack(machine_start_ack_spi),
+    .machine_stop_ack(machine_stop_ack_spi),
 
     .Ton_data_async(Ton_data_async),
     .change_Ton_ack(change_Ton_ack),
@@ -155,8 +170,10 @@ discharge_control discharge_ctrl_inst
     .rst_n(sys_rst_n),
 
     // parameter in
-    .machine_start_ack(machine_start_ack),
-    .machine_stop_ack(machine_stop_ack),
+    .machine_start_ack_spi(machine_start_ack_spi),
+    .machine_stop_ack_spi(machine_stop_ack_spi),
+    .machine_start_ack_key(machine_start_ack_key),
+    .machine_stop_ack_key(machine_stop_ack_key),
 
     .change_Ton_ack(change_Ton_ack),
     .Ton_data_async(Ton_data_async),
@@ -182,4 +199,22 @@ discharge_control discharge_ctrl_inst
     .mosfet_deion(mosfet_deion)
 );
 
+key_debounce key_start_debounce_inst
+(
+    .clk(clk_100M),
+    .rst_n(sys_rst_n),
+    .button_in(key_start),
+    .button_posedge(  ),
+    .button_negedge( machine_start_ack_key ),
+    .button_out(  )
+);
+key_debounce key_stop_debounce_inst
+(
+    .clk(clk_100M),
+    .rst_n(sys_rst_n),
+    .button_in(key_stop),
+    .button_posedge(  ),
+    .button_negedge( machine_stop_ack_key ),
+    .button_out(  )
+); 
 endmodule

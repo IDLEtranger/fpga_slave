@@ -26,7 +26,7 @@ begin
     end
     else
     begin
-        sample_current <= volt_ch1 / 125; // sample(mV) to real(A)
+        sample_current <= (volt_ch1 * -4 / 1000) + 20; // sample(mV) to real(A)
         sample_voltage_reg <= (volt_ch2 * 28) / 1000; // sample(mV) to real(V)
         sample_voltage <= sample_voltage_reg[15:0];
     end
