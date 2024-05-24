@@ -10,9 +10,9 @@ module key_debounce
     output reg  button_out
 );
 //// ---------------- internal constants --------------
-parameter N = 32 ;           // debounce timer bitwidth
-parameter FREQ = 100;         //model clock :Mhz
-parameter MAX_TIME = 20;     //ms
+parameter N = 32 ; // debounce timer bitwidth
+parameter FREQ = 100; //model clock :Mhz
+parameter MAX_TIME = 5; //ms
 localparam TIMER_MAX_VAL =   MAX_TIME * 1000 * FREQ;
 ////---------------- internal variables ---------------
 reg  [N-1 : 0]  q_reg;      // timing regs

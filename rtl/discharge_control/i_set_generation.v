@@ -8,12 +8,12 @@ module i_set_generation
         if waveform[15] == 1
 		    resister discharge
         else
-            waveform[1] == 1 : buck rectangle discharge
-            waveform[2] == 1 : buck triangle discharge
+            waveform[0] == 1 : buck rectangle discharge
+            waveform[1] == 1 : buck triangle discharge
 	*/
-    input [15:0] Ton_timer, // discharge time (us)
+    input [31:0] Ton_timer, // discharge time (us)
     input [15:0] Ip, // specified current
-    input [15:0] timer_buck_interleave,
+    input [31:0] timer_buck_interleave,
 
     output reg [15:0] i_set
 );

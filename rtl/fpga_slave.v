@@ -26,7 +26,10 @@ module fpga_slave
 	output wire [1:0] mosfet_buck2, // Buck2:上管 下管
 	output wire [1:0] mosfet_res1, // Res1:上管 下管
 	output wire [1:0] mosfet_res2, // Res2:上管 下管
-	output wire mosfet_deion // Qoff 消电离回路
+	output wire mosfet_deion, // Qoff 消电离回路
+
+    /** OPERATION INDICATOR **/
+    output wire operation_indicator
 );
 /* clock */
 `ifdef DEBUG_MODE
@@ -85,32 +88,8 @@ wire change_waveform_ack;
 // wire [1:0] mosfet_res1, // Res1:上管 下管
 // wire [1:0] mosfet_res2, // Res2:上管 下管
 // wire mosfet_deion // Qoff 消电离回路
-
-/**************************************/
-/************* PULSE SORT *************/
-/**************************************/
-wire [7:0] null_pulse_num;
-wire [7:0] normal_pulse_num;
-wire [7:0] short_pulse_num;
-wire pro1_short_flag; // 极间击穿 放电开始？
-
-/*******************************/
-/************* FIR *************/
-/*******************************/
-wire [11:0] filtered_wave;
-wire [11:0] filtered_vol;
-
-/*******************************/
-/************* IPC *************/
-/*******************************/
-wire [9:0] PID_Dt;
-wire [4:0] ns_level2;
-wire [15:0] Id_set;
-wire Start1;
-wire Start2;
-wire Start3;
-wire Start4;
-
+wire is_operation;
+assign operation_indicator = ~is_operation;
 
 //********************************************************************//
 //*************************** Instantiation **************************//
@@ -196,7 +175,10 @@ discharge_control discharge_ctrl_inst
     .mosfet_buck2(mosfet_buck2),
     .mosfet_res1(mosfet_res1),
     .mosfet_res2(mosfet_res2),
-    .mosfet_deion(mosfet_deion)
+    .mosfet_deion(mosfet_deion),
+
+    // opeartion indicator
+    .is_operation(is_operation)
 );
 
 key_debounce key_start_debounce_inst

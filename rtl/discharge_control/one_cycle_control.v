@@ -80,7 +80,10 @@ begin
 		Vin_Vgap <= Vin - V_gap; // Vin - Vgap
 		Lxfsx106 <= L * fs; // L*fs*10^6
 		Vinx2 <= Vin * 2; // 2*Vin
-		iref_id_i <= i_ref - Id_in_Ts; // i_ref - id_i
+		if(i_ref - Id_in_Ts < 0)
+			iref_id_i <= -32'd5;
+		else
+			iref_id_i <= i_ref - Id_in_Ts;
 	end
 end
 
