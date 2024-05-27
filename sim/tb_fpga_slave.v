@@ -37,7 +37,7 @@ module tb_fpga_slave;
         .mosfet_buck2(mosfet_buck2),
         .mosfet_res1(mosfet_res1),
         .mosfet_res2(mosfet_res2),
-        .mosfet_deion(mosfet_deion)
+        .mosfet_deion(mosfet_deion),
         .operation_indicator(operation_indicator)
     );
 
@@ -61,7 +61,7 @@ module tb_fpga_slave;
         sys_rst_n = 1;  // Release reset
 
         // Send SPI Commands
-        #1000;  // Wait for system initialization
+        #10000;  // Wait for system initialization
         spi_transaction(8'h91);  // Ton 100us
         spi_transaction(8'h64);  // 
         spi_transaction(8'h00);  // 
@@ -83,7 +83,7 @@ module tb_fpga_slave;
          // Key pulse after SPI
         #100;
         key_start = 0;
-        #6000000; // 6ms
+        #2000000; // 6ms
         key_start = 1;
     end
 

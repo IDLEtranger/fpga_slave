@@ -4,7 +4,7 @@ module mos_control
 	parameter TEST_INDUCTOR_CHARGING_TIME = 16'd40, // 0.4us
 	parameter WAIT_BREAKDOWN_MAXTIME = 16'd5000, // 50us
 	parameter WAIT_BREAKDOWN_MINTIME = 16'd80, // 0.8us
-	parameter MAX_CURRENT_LIMIT = 16'd38,
+	parameter MAX_CURRENT_LIMIT = 16'd76,
 	parameter BREAKDOWN_THRESHOLD_CUR = 16'd10,
 	parameter BREAKDOWN_THRESHOLD_VOL = 12'd30
 )
@@ -144,7 +144,7 @@ begin
 				&& (sample_voltage < BREAKDOWN_THRESHOLD_VOL)
 				&& (is_operation == 1'b1)
 				&& (waveform == 16'b0000_0000_0000_0001 // buck rectangle discharge
-				&& waveform == 16'b0000_0000_0000_0010)) // buck triangle discharge
+				|| waveform == 16'b0000_0000_0000_0010)) // buck triangle discharge
 				next_state <= S_BUCK_INTERLEAVE;
 
 			else if((timer_wait_breakdown >= WAIT_BREAKDOWN_MINTIME)
@@ -161,7 +161,9 @@ begin
 				next_state <= S_TEST;
 			
 			else if((timer_wait_breakdown > WAIT_BREAKDOWN_MAXTIME && waveform != 16'b0000_0000_0000_0000)
+				`ifndef TEST_MODE
 				|| ((timer_wait_breakdown < WAIT_BREAKDOWN_MAXTIME) && (corrected_current > BREAKDOWN_THRESHOLD_CUR) && (sample_voltage < BREAKDOWN_THRESHOLD_VOL))
+				`endif
 				|| (is_operation == 1'b0))
 				next_state <= S_DEION;
 			
@@ -192,7 +194,7 @@ begin
 			if(timer_buck_interleave >= Ton_timer) 
 				next_state <= S_DEION; 
 			else 
-				next_state <= S_BUCK_INTERLEAVE;
+				next_state <= S_TEST;
 		end
 
 		default:
@@ -342,8 +344,10 @@ always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
 		timer_deion <= 32'd0;
-	else if(current_state == S_DEION)
+	else if(current_state == S_DEION && timer_deion < Toff_timer)
 		timer_deion <= timer_deion + 1'b1; // per 10ns +1
+	else if(timer_deion >= Toff_timer)
+		timer_deion <= 32'd0;
 	else
 		timer_deion <= 32'd0;
 end
@@ -376,18 +380,23 @@ end
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
-		timer_buck_4us_180 <= inductor_charging_time_0 + DEAD_TIME + DEAD_TIME + 1; // set initial value exceed inductor_charging_time_0 + DEAD_TIME*2, make sure timer_buck_4us_180 is invalid before timer_buck_4us_0 reset it at 2us
-	else if(current_state == S_BUCK_INTERLEAVE || current_state == S_TEST)
+		timer_buck_4us_180 <= 400; // set initial value exceed inductor_charging_time_0 + DEAD_TIME*2, make sure timer_buck_4us_180 is invalid before timer_buck_4us_0 reset it at 2us
+	else if(current_state == S_BUCK_INTERLEAVE)
 	begin
 		if(timer_buck_4us_0 == 16'd199) // timer_buck_4us_0 at 2us reset timer_buck_4us_180
 			timer_buck_4us_180 <= 16'd0;
 		else if(timer_buck_4us_180 <= inductor_charging_time_0 + DEAD_TIME + DEAD_TIME)
 			timer_buck_4us_180 <= timer_buck_4us_180 + 1'd1; // per 10ns +1
-		else
-			timer_buck_4us_180 <= timer_buck_4us_180;
+	end
+	else if(current_state == S_TEST)
+	begin
+		if(timer_buck_4us_0 == 16'd199) // timer_buck_4us_0 at 2us reset timer_buck_4us_180
+			timer_buck_4us_180 <= 16'd0;
+		else if(timer_buck_4us_180 <= TEST_INDUCTOR_CHARGING_TIME + DEAD_TIME + DEAD_TIME)
+			timer_buck_4us_180 <= timer_buck_4us_180 + 1'd1; // per 10ns +1
 	end
 	else
-		timer_buck_4us_180 <= inductor_charging_time_0 + DEAD_TIME + DEAD_TIME + 1;
+		timer_buck_4us_180 <= 400;
 end
 /******************* buck wave timer *******************/
 // timer_buck_interleave

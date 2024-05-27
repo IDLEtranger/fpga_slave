@@ -67,7 +67,7 @@ end
 always @(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Ton_data <= 16'd0000;
+        Ton_data <= 16'd0;
     else if( change_Ton_ack_stage[2] == 1'b1 )
         Ton_data <= Ton_data_async;
 end
@@ -75,7 +75,7 @@ end
 always @(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Toff_data <= 16'd0000;
+        Toff_data <= 16'd100;
     else if( change_Toff_ack_stage[2] == 1'b1 )
         Toff_data <= Toff_data_async;
 end
@@ -83,7 +83,7 @@ end
 always @(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Ip_data <= 16'd0000;
+        Ip_data <= 16'd0;
     else if( change_Ip_ack_stage[2] == 1'b1 )
         Ip_data <= Ip_data_async;
 end
@@ -91,7 +91,7 @@ end
 always @(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        waveform_data <= 16'd0000;
+        waveform_data <= 16'h0000;
     else if( change_waveform_ack_stage[2] == 1'b1 )
         waveform_data <= waveform_data_async;
 end

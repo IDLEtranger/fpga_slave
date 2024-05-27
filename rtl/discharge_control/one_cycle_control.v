@@ -57,7 +57,7 @@ begin
 			if(i_set > 100)
 				i_ref <= 8'd50;
 			else
-				i_ref <= i_set >> 1; // i_ref = i_set / 2 (2 channels)
+				i_ref <= (i_set >> 1); // i_ref = i_set / 2 (2 channels)
 		end
 	end
 end
@@ -96,7 +96,7 @@ begin
 	begin
 		numerator1 <= 64'd0;
 		numerator2 <= 64'd0;
-		denominator1 <= 64'd0;
+		denominator1 <= 32'd0;
 	end
 
 	else

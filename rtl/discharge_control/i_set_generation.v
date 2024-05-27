@@ -43,15 +43,10 @@ begin
 		begin
             if(timer_buck_interleave == 0)
                 next_state <= IDLE;
-			else if(waveform != RESISTOR_DISCHARGE_WAVE)
-            begin
-                if(waveform == BUCK_RECTANGLE_WAVE)
-                    next_state <= RECTANGLE_WAVE;
-                else if(waveform == BUCK_TRIANGLE_WAVE)
-                    next_state <= TRIANGLE_WAVE;
-                else
-                    next_state <= IDLE;
-            end
+            else if(waveform == BUCK_RECTANGLE_WAVE)
+                next_state <= RECTANGLE_WAVE;
+            else if(waveform == BUCK_TRIANGLE_WAVE)
+                next_state <= TRIANGLE_WAVE;
             else
                 next_state <= IDLE;
 		end
@@ -67,6 +62,9 @@ begin
             if (timer_buck_interleave >= Ton_timer)
                 next_state <= IDLE;
         end
+
+        default:
+            next_state <= IDLE;
 
     endcase
 end
@@ -85,10 +83,10 @@ begin
             i_set <= Ip;
         else if(current_state == TRIANGLE_WAVE)
         begin
-            if (timer_buck_interleave < Ton_timer / 2)
-                i_set <= (Ip * timer_buck_interleave) / (Ton_timer / 2);
+            if (timer_buck_interleave < (Ton_timer >> 1))
+                i_set <= (Ip * timer_buck_interleave) / (Ton_timer >> 1);
             else
-                i_set <= Ip - (Ip * (timer_buck_interleave - Ton_timer / 2)) / (Ton_timer / 2);
+                i_set <= Ip - (Ip * (timer_buck_interleave - (Ton_timer >> 1) )) / (Ton_timer >> 1);
         end
     end
 end

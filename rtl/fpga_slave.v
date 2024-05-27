@@ -1,4 +1,5 @@
 `define DEBUG_MODE
+`define TEST_MODE
 module fpga_slave
 (
     /** CLOCK & RESET **/
@@ -73,8 +74,8 @@ wire [15:0] Toff_data_async;
 wire [15:0] Ip_data_async;
 wire [15:0] waveform_data_async;
 
-wire machine_start_ack;
-wire machine_stop_ack;
+wire machine_start_ack_spi;
+wire machine_stop_ack_spi;
 wire change_Ton_ack;
 wire change_Toff_ack;
 wire change_Ip_ack;
