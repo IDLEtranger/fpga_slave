@@ -24,6 +24,9 @@ module discharge_control
 	// sampling data
 	input signed [15:0] sample_current,
 	input signed [15:0] sample_voltage,
+
+	// signle_discharge_button
+	input wire signle_discharge_button,
 	
 	// output mosfet control signal
 	output wire [1:0] mosfet_buck1, // Buck1:上管 下管
@@ -48,6 +51,7 @@ module discharge_control
 	(* preserve *) wire [15:0] Toff_data;
 	(* preserve *) wire [15:0] Ip_data;
 	(* preserve *) wire [15:0] waveform_data;
+	(* preserve *) wire signle_discharge_button_pressed;
 `else
 	wire is_machine;
 	reg is_machine_key;
@@ -56,12 +60,13 @@ module discharge_control
 	wire [15:0] Toff_data;
 	wire [15:0] Ip_data;
 	wire [15:0] waveform_data;
+	wire signle_discharge_button_pressed;
 `endif
 
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
-		is_machine_key <= 1'b0;
+		is_machine_key <= 1'b1;
 	else if(machine_start_ack_key == 1'b1)
 		is_machine_key <= 1'b1;
 	else if(machine_stop_ack_key == 1'b1)
@@ -78,7 +83,7 @@ mos_control
 	.WAIT_BREAKDOWN_MINTIME( 16'd300 ), // 3us, wait breakdown min timer count (10ns)
 	.MAX_CURRENT_LIMIT( 16'd78 ), // 78A, max current limit (A)
 	.BREAKDOWN_THRESHOLD_CUR( 16'd15 ), // 15A, current rise threshold(A), above it means breakdown &&
-	.BREAKDOWN_THRESHOLD_VOL( 12'd30 ) // 30V, voltage fall threshold(A), below it means breakdown
+	.BREAKDOWN_THRESHOLD_VOL( 12'd40 ) // 40V, voltage fall threshold(A), below it means breakdown
 )  mos_control_instance
 (
 	.clk(clk), // 100MHz 10ns
@@ -100,6 +105,9 @@ mos_control
 	// sampling data
 	.sample_current(sample_current),
 	.sample_voltage(sample_voltage),
+
+	// single discharge key press
+	.signle_discharge_button_pressed(signle_discharge_button_pressed),
 
 	// output mosfet control signal
 	.mosfet_buck1(mosfet_buck1),
@@ -138,6 +146,16 @@ parameter_generator param_gen_inst
 	.waveform_data_async(waveform_data_async),
 	.waveform_data(waveform_data)
 );
+
+key_debounce key_sigle_discharge_debounce_inst
+(
+    .clk(clk),
+    .rst_n(rst_n),
+    .button_in( signle_discharge_button ),
+    .button_posedge(  ),
+    .button_negedge( signle_discharge_button_pressed ),
+    .button_out(  )
+); 
 
 
 endmodule

@@ -1,5 +1,4 @@
 `define DEBUG_MODE
-`define TEST_MODE
 module fpga_slave
 (
     /** CLOCK & RESET **/
@@ -9,6 +8,7 @@ module fpga_slave
     /** KEY **/
     input wire key_start,
     input wire key_stop,
+    input wire signle_discharge_button,
 
     /** ADC **/
     output wire ad1_clk,
@@ -170,6 +170,9 @@ discharge_control discharge_ctrl_inst
     // sampling data
     .sample_current(sample_current),
     .sample_voltage(sample_voltage),
+
+    // signle_discharge_button
+    .signle_discharge_button(signle_discharge_button),
 
     // output mosfet control signal
     .mosfet_buck1(mosfet_buck1),

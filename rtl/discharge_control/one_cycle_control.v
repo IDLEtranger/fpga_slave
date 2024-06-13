@@ -10,8 +10,8 @@ module one_cycle_control
 	input clk,
 	input rst_n,
 	
-	input [15:0] sample_current, // 滤波后的电流
-	input [15:0] sample_voltage, // 滤波后的电压
+	input [15:0] sample_current,
+	input [15:0] sample_voltage,
 
 	input [15:0] timer_buck_4us_0,
 
@@ -44,7 +44,7 @@ begin
 	if(rst_n == 1'b0) 
 	begin
 		Id_in_Ts <= 12'd0;
-		V_gap <= 12'd0;
+		V_gap <= 12'd25;
 		i_ref <= 8'd0;
 	end
 	else
@@ -52,8 +52,8 @@ begin
 		if(timer_buck_4us_0 == 16'b0)
 		begin
 			Id_in_Ts <= sample_current_reg;
-			V_gap <= sample_voltage;
-			// V_gap <= 16'd25; // set a fixed discharge gap voltage value for test
+			//V_gap <= sample_voltage;
+			V_gap <= 16'd25; // set a fixed discharge gap voltage value for test
 			if(i_set > 100)
 				i_ref <= 8'd50;
 			else

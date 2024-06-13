@@ -6,6 +6,7 @@ module tb_fpga_slave;
     reg sys_rst_n;
     reg key_start;
     reg key_stop;
+    reg signle_discharge_button;
     reg mosi;
     reg sclk;
     reg cs_n;
@@ -33,6 +34,7 @@ module tb_fpga_slave;
         .miso(miso),
         .ad1_in(ad1_in),
         .ad2_in(ad2_in),
+        .signle_discharge_button(signle_discharge_button),
         .mosfet_buck1(mosfet_buck1),
         .mosfet_buck2(mosfet_buck2),
         .mosfet_res1(mosfet_res1),
@@ -54,14 +56,15 @@ module tb_fpga_slave;
         cs_n = 1;
         key_start = 1;
         key_stop = 1;
+        signle_discharge_button = 1;
         ad1_in = 12'h000;
         ad2_in = 12'h000;
         
-        #200;
+        #1000;
         sys_rst_n = 1;  // Release reset
 
         // Send SPI Commands
-        #10000;  // Wait for system initialization
+        #1000;  // Wait for system initialization
         spi_transaction(8'h91);  // Ton 100us
         spi_transaction(8'h64);  // 
         spi_transaction(8'h00);  // 
@@ -70,41 +73,60 @@ module tb_fpga_slave;
         spi_transaction(8'h32);  //
         spi_transaction(8'h00);  //
 
-        spi_transaction(8'h9C);  // buck test discharge
+        spi_transaction(8'h9C);  // waveform
+        spi_transaction(8'h04);  // single test discharge
         spi_transaction(8'h00);  // 
-        spi_transaction(8'h00);  // 
-
+        /*
+        spi_transaction(8'h00);  // buck reac discharge
+        spi_transaction(8'h01);  // 
+        */
         spi_transaction(8'h93);  // Ip 60/2 = 30A
         spi_transaction(8'h3C);   
         spi_transaction(8'h00);  
 
         spi_transaction(8'h06);  // Machine start command
 
-         // Key pulse after SPI
-        #100;
-        key_start = 0;
-        #2000000; // 6ms
-        key_start = 1;
+        // Key
+        #1000;
+        //key_start = 0;
+        signle_discharge_button = 0;
+        #1000000; // key press 1ms
+        //key_start = 1;
+        signle_discharge_button = 1;
+        #2000000; // key release 2ms
+        signle_discharge_button = 0;
+        #1000000; // key press 1ms
+        signle_discharge_button = 1;
     end
 
     // AD input simulation over time
     initial begin
-        #1000;
-        // wait breakdown
-        ad1_in = 12'hE00; // 3.75V approximation (5A)
-        ad2_in = 12'hEDB; // 4.285V approximation (120V)
-        #6000000; // 6ms
-        //discharge
-        ad1_in = 12'h400; // -2.5V (30A)
-        ad2_in = 12'h96E; // 0.893V (25V)
-        #100000; // 100us
+        #5000;
         // deion
         ad1_in = 12'hFFF; // 5V (0A)
         ad2_in = 12'h800; // 0V (0V)
-        #50000; // 50us
+        #1000000; // 1ms + DEAD_TIME
+        
+        //discharge
+        ad1_in = 12'h400; // -2.5V (30A)
+        ad2_in = 12'h68F; // -0.893V (25V)
+        #100000; // 100us
+        
+        // deion
+        ad1_in = 12'hFFF; // 5V (0A)
+        ad2_in = 12'h800; // 0V (0V)
+        #2899990;
+        
         // wait breakdown
         ad1_in = 12'hE00; // 3.75V approximation (5A)
-        ad2_in = 12'hEDB; // 4.285V approximation (120V)
+        ad2_in = 12'h124; // 4.285V approximation (120V)
+        #50000; // 50us
+
+        //discharge
+        ad1_in = 12'h400; // -2.5V (30A)
+        ad2_in = 12'h68F; // -0.893V (25V)
+        #100000; // 100us
+
     end
 
     // SPI Protocol Helper Task
