@@ -15,9 +15,10 @@ module discharge_control
 	parameter INDUCTANCE = 16'd3300, // inductance(uH) 3.3uH = 3300nH
 	parameter V_GAP_FIXED = 16'd20, // discharge gap voltage
 
-	parameter CURRENT_STAND_CHARGING_TIMES = 16'd80, // one cycle current stand
-    parameter CURRENT_RISE_CHARGING_TIMES = 16'd120, // one cycle current rise 5A
-    parameter CURRENT_RISE_CYCLE_TIMES = 16'd3 // current rise 5A
+	parameter CURRENT_STAND_CHARGING_TIMES = 16'd80, // current stand duty cycle
+    parameter CURRENT_RISE_CHARGING_TIMES = 16'd120, // current rise duty cycle
+    parameter CURRENT_RISE_CYCLE_TIMES = 16'd3, // current rise cycles
+	parameter BUCK_INTERLEAVE_DELAY_TIME = 16'd10
 )
 (
 	input clk, // 100MHz 10ns
@@ -112,9 +113,10 @@ mos_control
 	.INDUCTANCE ( INDUCTANCE ), // inductance(uH) 3.3uH = 3300nH
 	.V_GAP_FIXED( V_GAP_FIXED ), // discharge gap voltage
 	
-	.CURRENT_STAND_CHARGING_TIMES( CURRENT_STAND_CHARGING_TIMES ), // one cycle current stand
-    .CURRENT_RISE_CHARGING_TIMES( CURRENT_RISE_CHARGING_TIMES ), // one cycle current rise 5A
-    .CURRENT_RISE_CYCLE_TIMES( CURRENT_RISE_CYCLE_TIMES ) // current rise 5A
+	.CURRENT_STAND_CHARGING_TIMES( CURRENT_STAND_CHARGING_TIMES ), // current stand duty cycle
+    .CURRENT_RISE_CHARGING_TIMES( CURRENT_RISE_CHARGING_TIMES ), // current rise duty cycle
+    .CURRENT_RISE_CYCLE_TIMES( CURRENT_RISE_CYCLE_TIMES ), // current rise cycles
+	.BUCK_INTERLEAVE_DELAY_TIME( BUCK_INTERLEAVE_DELAY_TIME )
 )  mos_control_instance
 (
 	.clk(clk), // 100MHz 10ns

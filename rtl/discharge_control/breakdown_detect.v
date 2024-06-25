@@ -60,14 +60,14 @@ begin
     begin
         if(IS_OPEN_CUR_DETECT == 1'b0)
             begin
-                if(timer_vol_on_threshold >= BREAKDOWN_THRESHOLD_TIME)
+                if(timer_vol_on_threshold == BREAKDOWN_THRESHOLD_TIME)
                     is_breakdown <= 1'b1;
                 else
                     is_breakdown <= 1'b0;
             end
         else if(IS_OPEN_CUR_DETECT == 1'b1)
             begin
-                if(timer_vol_on_threshold >= BREAKDOWN_THRESHOLD_TIME && timer_vol_on_threshold >= BREAKDOWN_THRESHOLD_TIME)
+                if(timer_vol_on_threshold == BREAKDOWN_THRESHOLD_TIME && timer_vol_on_threshold == BREAKDOWN_THRESHOLD_TIME)
                     is_breakdown <= 1'b1;
                 else
                     is_breakdown <= 1'b0;

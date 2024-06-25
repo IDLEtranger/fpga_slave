@@ -164,18 +164,19 @@ discharge_control
 	.MAX_CURRENT_LIMIT( 16'd120 ), // 78A, max current limit (A)
 
 	.IS_OPEN_CUR_DETECT( 1'b0 ), // 0 means breakdown detection do not consider sample current
-    .DEION_THRESHOLD_VOL( 16'd5 ),
+    .DEION_THRESHOLD_VOL( 16'd3 ),
 	.BREAKDOWN_THRESHOLD_CUR( 16'd15 ), // current rise threshold(A), above it means breakdown &&
 	.BREAKDOWN_THRESHOLD_VOL( 16'd40 ), // voltage fall threshold(A), below it means breakdown
-	.BREAKDOWN_THRESHOLD_TIME( 16'd50 ),
+	.BREAKDOWN_THRESHOLD_TIME( 16'd70 ),
 
 	.INPUT_VOL( 16'd120 ), // input voltage 120V
 	.INDUCTANCE ( 16'd3300 ), // inductance(uH) 3.3uH = 3300nH
     .V_GAP_FIXED( 16'd20 ), // discharge gap voltage
 
-    .CURRENT_STAND_CHARGING_TIMES( 16'd90 ), // one cycle current stand
-    .CURRENT_RISE_CHARGING_TIMES( 16'd120 ), // one cycle current rise 5A
-    .CURRENT_RISE_CYCLE_TIMES( 16'd3 ) // current rise 5A
+    .CURRENT_STAND_CHARGING_TIMES( 16'd200 ),
+    .CURRENT_RISE_CHARGING_TIMES( 16'd250 ),
+    .CURRENT_RISE_CYCLE_TIMES( 16'd5 ),
+    .BUCK_INTERLEAVE_DELAY_TIME( 16'd10 )
 ) discharge_ctrl_inst
 (
     .clk(clk_100M),

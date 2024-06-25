@@ -18,9 +18,10 @@ module mos_control
 	parameter V_GAP_FIXED = 16'd20, // discharge gap voltage
 
 	// openloop_control
-	parameter CURRENT_STAND_CHARGING_TIMES = 16'd80, // one cycle current stand
-    parameter CURRENT_RISE_CHARGING_TIMES = 16'd120, // one cycle current rise 5A
-    parameter CURRENT_RISE_CYCLE_TIMES = 16'd3 // current rise 5A
+	parameter CURRENT_STAND_CHARGING_TIMES = 16'd80, // current stand duty cycle
+    parameter CURRENT_RISE_CHARGING_TIMES = 16'd120, // current rise duty cycle
+    parameter CURRENT_RISE_CYCLE_TIMES = 16'd3, // current rise cycles
+	parameter BUCK_INTERLEAVE_DELAY_TIME = 16'd0
 )
 (
 	input clk, // 100MHz 10ns
@@ -115,9 +116,12 @@ end
 
 /************************** timer define **************************/
 reg [31:0] timer_wait_breakdown; // in S_WAIT_BREAKDOWN every 10ns ++, reset when leave S_WAIT_BREAKDOWN
+
 reg [31:0] timer_deion; // in S_DEION every 10ns ++, reset when leave S_DEION
 reg [63:0] timer_deion_single_buck; // in S_DEION_SINGLE_BUCK every 10ns ++, reset when leave S_DEION_SINGLE_BUCK
+
 reg [15:0] timer_after_start_single; // in S_DEION_SINGLE_BUCK, after will_single_discharge == 1'b1, every 10ns ++
+wire [15:0] timer_after_breakdown; // in S_WAIT_BREAKDOWN after is_breakdown == 1'b1, every 10ns ++, reset when go into S_BUCK_INTERLEAVE
 
 // buck wave timer
 reg [15:0] timer_buck_4us_0; // in S_BUCK_INTERLEAVE every 10ns ++, reset every 4us
@@ -189,6 +193,7 @@ begin
 		begin
 			if(
 				(timer_wait_breakdown <= WAIT_BREAKDOWN_MAXTIME)
+				&& (timer_after_breakdown >= BUCK_INTERLEAVE_DELAY_TIME)
 				&& (is_breakdown == 1'b1)
 				&& (is_operation == 1'b1)
 				&& (waveform == WAVE_BUCK_CC_RECTANGLE_DISCHARGE // continue closeloop buck rectangle discharge
@@ -456,6 +461,18 @@ begin
 		timer_after_start_single <= 16'd0;
 end
 
+// timer_after_breakdown
+reg timer_after_breakdown_reset;
+always@(posedge clk or negedge rst_n)
+begin
+	if(rst_n == 1'b0)
+		timer_after_breakdown_reset <= 1'b0;
+	else if(current_state == S_WAIT_BREAKDOWN && next_state == S_BUCK_INTERLEAVE)
+		timer_after_breakdown_reset <= 1'b1;
+	else
+		timer_after_breakdown_reset <= 1'b0;
+end
+
 // timer_wait_breakdown
 always@(posedge clk or negedge rst_n)
 begin
@@ -490,7 +507,7 @@ begin
 	begin
 		if(timer_buck_4us_0 == 16'd199) // timer_buck_4us_0 at 2us reset timer_buck_4us_180
 			timer_buck_4us_180 <= 16'd0;
-		else if(timer_buck_4us_180 <= 201 + DEAD_TIME + DEAD_TIME)
+		else if(timer_buck_4us_180 <= 399)
 			timer_buck_4us_180 <= timer_buck_4us_180 + 1'd1; // per 10ns +1
 	end
 	else
@@ -634,5 +651,19 @@ openloop_control
     .current_state(current_state),
 
 	.inductor_charging_time_0_openloop(inductor_charging_time_0_openloop)
+);
+
+pulse_start_timer
+#(
+    .WIDTH( 16 ),
+    .INIT_VALUE( 0 )
+)
+pulse_start_timer_inst
+(
+    .clk( clk ),
+    .rst_n( rst_n ),
+    .timer_reset( timer_after_breakdown_reset ),
+    .start_pulse( is_breakdown ),
+    .output_timer( timer_after_breakdown )
 );
 endmodule
