@@ -1,12 +1,26 @@
 module mos_control
 #(
 	parameter DEAD_TIME = 16'd10, // Because of the extra diodes, the dead time can be long but not short.
-	parameter TEST_INDUCTOR_CHARGING_TIME = 16'd40, // 0.4us
-	parameter WAIT_BREAKDOWN_MAXTIME = 16'd5000, // 50us
+	parameter WAIT_BREAKDOWN_MAXTIME = 16'd10000, // 50us
 	parameter WAIT_BREAKDOWN_MINTIME = 16'd80, // 0.8us
 	parameter MAX_CURRENT_LIMIT = 16'd76,
+
+	// breakdown_detect
+	parameter IS_OPEN_CUR_DETECT = 1'b0,
+	parameter DEION_THRESHOLD_VOL = 16'd8,
 	parameter BREAKDOWN_THRESHOLD_CUR = 16'd10,
-	parameter BREAKDOWN_THRESHOLD_VOL = 12'd40
+	parameter BREAKDOWN_THRESHOLD_VOL = 16'd40,
+	parameter BREAKDOWN_THRESHOLD_TIME = 16'd10, // 10ns*BREAKDOWN_THRESHOLD_TIME after the current & voltage meet the conditions, it is considered a breakdown
+
+	// one cycle control (OCC)
+	parameter INPUT_VOL = 16'd120, // input voltage 120V
+	parameter INDUCTANCE =  16'd3300, // inductance(uH) 3.3uH = 3300nH
+	parameter V_GAP_FIXED = 16'd20, // discharge gap voltage
+
+	// openloop_control
+	parameter CURRENT_STAND_CHARGING_TIMES = 16'd80, // one cycle current stand
+    parameter CURRENT_RISE_CHARGING_TIMES = 16'd120, // one cycle current rise 5A
+    parameter CURRENT_RISE_CYCLE_TIMES = 16'd3 // current rise 5A
 )
 (
 	input clk, // 100MHz 10ns
@@ -15,12 +29,6 @@ module mos_control
 	// pulse generate parameter
 	input is_machine, // 1'b1: machine start, 1'b0: machine stop
 	input [15:0] waveform,
-	/*
-		16'b1000_0000_0000_0000 : resister discharge
-		16'b0000_0000_0000_0001 : buck rectangle discharge
-		16'b0000_0000_0000_0010 : buck triangle discharge
-		16'b0000_0000_0000_0100 : buck rectangle single discharge
-	*/
 	input [15:0] Ip, // specified current	
 	input [15:0] Ton, // discharge time (us)
 	input [15:0] Toff, // Ts = Twaitbreakdown + Ton + Tofff (a discharge cycle) (us)
@@ -39,13 +47,27 @@ module mos_control
 	output reg [1:0] mosfet_res2, // Res2:upper_mosfet lower_mosfet
 	output reg mosfet_deion, // Qoff deion circuit
 	// operation indicator
-	output reg is_operation
+	output reg is_operation,
+	// single discharge indicator
+	output reg will_single_discharge,
+	output is_breakdown
 );
-// waveform
-localparam WAVE_RES_DISCHARGE = 16'b1000_0000_0000_0000;
-localparam WAVE_BUCK_RECTANGLE_DISCHARGE = 16'b0000_0000_0000_0001;
-localparam WAVE_BUCK_TRIANGLE_DISCHARGE = 16'b0000_0000_0000_0010;
-localparam WAVE_BUCK_SINGLE_RECTANGLE_DISCHARGE = 16'b0000_0000_0000_0100;
+/*!!!!!!!!!!!!!!!!!!!!!!!!! waveform !!!!!!!!!!!!!!!!!!!!!!!!!*/
+/*
+	x000_0000_0000_0000; x=0: BUCK discharge, x=1: RES discharge
+	0x00_0000_0000_0000; x=0: continue discharge, x=1: single discharge
+	00x0_0000_0000_0000; x=0: openloop, x=1: closedloop
+*/
+`define BUCK_OR_RES_BIT 15
+`define CONTINUE_OR_SINGLE_BIT 14
+`define OPEN_OR_CLOSE_BIT 13
+
+localparam WAVE_RES_CO_DISCHARGE = 16'b1000_0000_0000_0000; // 0x8000
+
+localparam WAVE_BUCK_CC_RECTANGLE_DISCHARGE = 16'b0010_0000_0000_0001; // 0x2001
+localparam WAVE_BUCK_CC_TRIANGLE_DISCHARGE = 16'b0010_0000_0000_0010; // 0x2002
+localparam WAVE_BUCK_SC_RECTANGLE_DISCHARGE = 16'b0110_0000_0000_0001; // 0x6001
+localparam WAVE_BUCK_SO_RECTANGLE_DISCHARGE = 16'b0100_0000_0000_0001; // 0x4001
 
 // current correction
 reg signed [15:0] corrected_current;
@@ -53,7 +75,7 @@ always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
 		corrected_current <= 16'd0;
-	else 
+	else if (sample_current < 50)
 		corrected_current <= sample_current;
 end
 
@@ -95,7 +117,7 @@ end
 reg [31:0] timer_wait_breakdown; // in S_WAIT_BREAKDOWN every 10ns ++, reset when leave S_WAIT_BREAKDOWN
 reg [31:0] timer_deion; // in S_DEION every 10ns ++, reset when leave S_DEION
 reg [63:0] timer_deion_single_buck; // in S_DEION_SINGLE_BUCK every 10ns ++, reset when leave S_DEION_SINGLE_BUCK
-reg [15:0] timer_after_start_single; // in S_DEION_SINGLE_BUCK, after is_single_discharge == 1'b1, every 10ns ++
+reg [15:0] timer_after_start_single; // in S_DEION_SINGLE_BUCK, after will_single_discharge == 1'b1, every 10ns ++
 
 // buck wave timer
 reg [15:0] timer_buck_4us_0; // in S_BUCK_INTERLEAVE every 10ns ++, reset every 4us
@@ -112,7 +134,9 @@ reg [31:0] Toff_timer;
 
 // induction charging time
 wire [15:0] inductor_charging_time_0;
+wire [15:0] inductor_charging_time_0_openloop;
 reg [15:0] inductor_charging_time_180;
+reg [15:0] inductor_charging_time_180_openloop;
 
 /******************* state shift *******************/
 localparam S_WAIT_BREAKDOWN = 		8'b00000001;
@@ -124,8 +148,13 @@ localparam S_BUCK_INTERLEAVE = 		8'b00000010;
 // resister discharge
 localparam S_RES_DISCHARGE = 		8'b00000100;
 
-(* preserve *) reg [7:0] current_state;
-(* preserve *) reg [7:0] next_state;
+`ifdef DEBUG_MODE
+	(* preserve *) reg [7:0] current_state;
+	(* preserve *) reg [7:0] next_state;
+`else
+    reg [7:0] current_state;
+	reg [7:0] next_state;
+`endif
 
 always@(posedge clk or negedge rst_n)
 begin
@@ -140,7 +169,7 @@ begin
 	case(current_state)
 		S_DEION:
 		begin
-			if(waveform == WAVE_BUCK_SINGLE_RECTANGLE_DISCHARGE)
+			if(waveform[`CONTINUE_OR_SINGLE_BIT] == 1'b1)
 				next_state <= S_DEION_SINGLE_BUCK;
 			else if(timer_deion >= Toff_timer && is_operation == 1'b1)
 				next_state <= S_WAIT_BREAKDOWN;
@@ -159,29 +188,27 @@ begin
 		S_WAIT_BREAKDOWN:
 		begin
 			if(
-				(timer_wait_breakdown >= WAIT_BREAKDOWN_MINTIME)
-				&& (timer_wait_breakdown <= WAIT_BREAKDOWN_MAXTIME)
-				&& (corrected_current > BREAKDOWN_THRESHOLD_CUR)
-				&& (sample_voltage < BREAKDOWN_THRESHOLD_VOL)
+				(timer_wait_breakdown <= WAIT_BREAKDOWN_MAXTIME)
+				&& (is_breakdown == 1'b1)
 				&& (is_operation == 1'b1)
-				&& (waveform == WAVE_BUCK_RECTANGLE_DISCHARGE // buck rectangle discharge
-					|| waveform == WAVE_BUCK_TRIANGLE_DISCHARGE // buck triangle discharge
-					|| waveform == WAVE_BUCK_SINGLE_RECTANGLE_DISCHARGE) // single buck rectangle discharge
+				&& (waveform == WAVE_BUCK_CC_RECTANGLE_DISCHARGE // continue closeloop buck rectangle discharge
+					|| waveform == WAVE_BUCK_CC_TRIANGLE_DISCHARGE // continue closeloop buck triangle discharge
+					|| waveform == WAVE_BUCK_SC_RECTANGLE_DISCHARGE // single closeloop buck rectangle discharge
+					|| waveform == WAVE_BUCK_SO_RECTANGLE_DISCHARGE) // single openloop buck rectangle discharge
 				)
 				next_state <= S_BUCK_INTERLEAVE;
 
 			else if(
-				(timer_wait_breakdown >= WAIT_BREAKDOWN_MINTIME)
-				&& (timer_wait_breakdown <= WAIT_BREAKDOWN_MAXTIME)
-				&& (corrected_current > BREAKDOWN_THRESHOLD_CUR)
-				&& (sample_voltage < BREAKDOWN_THRESHOLD_VOL)
+				(timer_wait_breakdown <= WAIT_BREAKDOWN_MAXTIME)
+				&& (is_breakdown == 1'b1)
 				&& (is_operation == 1'b1)
-				&& (waveform == WAVE_RES_DISCHARGE) // resister discharge
+				&& (waveform == WAVE_RES_CO_DISCHARGE) // resister discharge
 				)
 				next_state <= S_RES_DISCHARGE;
 			
 			else if(
-				(timer_wait_breakdown > WAIT_BREAKDOWN_MAXTIME)
+				(is_breakdown == 1'b0)
+				&& (timer_wait_breakdown > WAIT_BREAKDOWN_MAXTIME)
 				|| (is_operation == 1'b0)
 				)
 				next_state <= S_DEION;
@@ -192,7 +219,7 @@ begin
 
 		S_BUCK_INTERLEAVE:
 		begin
-			if(timer_buck_interleave >= Ton_timer && waveform == WAVE_BUCK_SINGLE_RECTANGLE_DISCHARGE) 
+			if(timer_buck_interleave >= Ton_timer && waveform[`CONTINUE_OR_SINGLE_BIT] == 1'b1) 
 				next_state <= S_DEION_SINGLE_BUCK;
 			else if(timer_buck_interleave >= Ton_timer) 
 				next_state <= S_DEION; 
@@ -303,28 +330,54 @@ begin
 			/******************* buck wave *******************/
 			S_BUCK_INTERLEAVE:
 			begin
-				// buck1, wait DEAD_TIME before turn on mosfet
-				if(timer_buck_4us_0 >= 16'd0 && timer_buck_4us_0 < DEAD_TIME)
-					mosfet_buck1 <= 2'b00; // wait DEAD_TIME for Qdown turn off
-				else if(timer_buck_4us_0 >= DEAD_TIME && timer_buck_4us_0 < inductor_charging_time_0 + DEAD_TIME) /* !first entry! */
+				if ( waveform[`OPEN_OR_CLOSE_BIT] == 1'b1 ) // closedloop
 				begin
-					mosfet_buck1 <= 2'b10; // charge inductor
-					mosfet_res1 <= 2'b00;
+					// buck1, wait DEAD_TIME before turn on mosfet
+					if(timer_buck_4us_0 >= 16'd0 && timer_buck_4us_0 < DEAD_TIME)
+						mosfet_buck1 <= 2'b00; // wait DEAD_TIME for Qdown turn off
+					else if(timer_buck_4us_0 >= DEAD_TIME && timer_buck_4us_0 < inductor_charging_time_0 + DEAD_TIME) /* !first entry! */
+					begin
+						mosfet_buck1 <= 2'b10; // charge inductor
+					end
+					else if(timer_buck_4us_0 >= inductor_charging_time_0 + DEAD_TIME && timer_buck_4us_0 < inductor_charging_time_0 + DEAD_TIME + DEAD_TIME)
+						mosfet_buck1 <= 2'b00; // wait DEAD_TIME for Qup turn off
+					else if(timer_buck_4us_0 >= inductor_charging_time_0 + DEAD_TIME + DEAD_TIME)
+						mosfet_buck1 <= 2'b01; // discharge inductor
+												
+					// buck2, wait DEAD_TIME before turn on mosfet
+					if(timer_buck_4us_180 >= 16'd0 && timer_buck_4us_180 < DEAD_TIME)
+						mosfet_buck2 <= 2'b00; // wait DEAD_TIME for Qdown turn off
+					else if(timer_buck_4us_180 >= DEAD_TIME && timer_buck_4us_180 < inductor_charging_time_180 + DEAD_TIME)
+						mosfet_buck2 <= 2'b10; // charge inductor
+					else if(timer_buck_4us_180 >= inductor_charging_time_180 + DEAD_TIME && timer_buck_4us_180 < inductor_charging_time_180 + DEAD_TIME + DEAD_TIME)
+						mosfet_buck2 <= 2'b00; // wait DEAD_TIME for Qup turn off
+					else if(timer_buck_4us_180 >= inductor_charging_time_180 + DEAD_TIME + DEAD_TIME) /* !first entry! */
+						mosfet_buck2 <= 2'b01; // discharge inductor
 				end
-				else if(timer_buck_4us_0 >= inductor_charging_time_0 + DEAD_TIME && timer_buck_4us_0 < inductor_charging_time_0 + DEAD_TIME + DEAD_TIME)
-					mosfet_buck1 <= 2'b00; // wait DEAD_TIME for Qup turn off
-				else if(timer_buck_4us_0 >= inductor_charging_time_0 + DEAD_TIME + DEAD_TIME)
-					mosfet_buck1 <= 2'b01; // discharge inductor
-											
-				// buck2, wait DEAD_TIME before turn on mosfet
-				if(timer_buck_4us_180 >= 16'd0 && timer_buck_4us_180 < DEAD_TIME)
-					mosfet_buck2 <= 2'b00; // wait DEAD_TIME for Qdown turn off
-				else if(timer_buck_4us_180 >= DEAD_TIME && timer_buck_4us_180 < inductor_charging_time_180 + DEAD_TIME)
-					mosfet_buck2 <= 2'b10; // charge inductor
-				else if(timer_buck_4us_180 >= inductor_charging_time_180 + DEAD_TIME && timer_buck_4us_180 < inductor_charging_time_180 + DEAD_TIME + DEAD_TIME)
-					mosfet_buck2 <= 2'b00; // wait DEAD_TIME for Qup turn off
-				else if(timer_buck_4us_180 >= inductor_charging_time_180 + DEAD_TIME + DEAD_TIME) /* !first entry! */
-					mosfet_buck2 <= 2'b01; // discharge inductor
+				else if ( waveform[`OPEN_OR_CLOSE_BIT] == 1'b0 ) // openloop
+				begin
+					// buck1, wait DEAD_TIME before turn on mosfet
+					if(timer_buck_4us_0 >= 16'd0 && timer_buck_4us_0 < DEAD_TIME)
+						mosfet_buck1 <= 2'b00; // wait DEAD_TIME for Qdown turn off
+					else if(timer_buck_4us_0 >= DEAD_TIME && timer_buck_4us_0 < inductor_charging_time_0_openloop + DEAD_TIME) /* !first entry! */
+					begin
+						mosfet_buck1 <= 2'b10; // charge inductor
+					end
+					else if(timer_buck_4us_0 >= inductor_charging_time_0_openloop + DEAD_TIME && timer_buck_4us_0 < inductor_charging_time_0_openloop + DEAD_TIME + DEAD_TIME)
+						mosfet_buck1 <= 2'b00; // wait DEAD_TIME for Qup turn off
+					else if(timer_buck_4us_0 >= inductor_charging_time_0_openloop + DEAD_TIME + DEAD_TIME)
+						mosfet_buck1 <= 2'b01; // discharge inductor
+												
+					// buck2, wait DEAD_TIME before turn on mosfet
+					if(timer_buck_4us_180 >= 16'd0 && timer_buck_4us_180 < DEAD_TIME)
+						mosfet_buck2 <= 2'b00; // wait DEAD_TIME for Qdown turn off
+					else if(timer_buck_4us_180 >= DEAD_TIME && timer_buck_4us_180 < inductor_charging_time_180_openloop + DEAD_TIME)
+						mosfet_buck2 <= 2'b10; // charge inductor
+					else if(timer_buck_4us_180 >= inductor_charging_time_180_openloop + DEAD_TIME && timer_buck_4us_180 < inductor_charging_time_180_openloop + DEAD_TIME + DEAD_TIME)
+						mosfet_buck2 <= 2'b00; // wait DEAD_TIME for Qup turn off
+					else if(timer_buck_4us_180 >= inductor_charging_time_180_openloop + DEAD_TIME + DEAD_TIME) /* !first entry! */
+						mosfet_buck2 <= 2'b01; // discharge inductor
+				end
 			end
 
 			/******************* res discharge *******************/
@@ -341,18 +394,17 @@ begin
 end
 
 // signle discharge signal
-reg is_single_discharge;
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
-		is_single_discharge <= 1'b0;
+		will_single_discharge <= 1'b0;
 	else if(
 		(current_state == S_BUCK_INTERLEAVE && next_state == S_DEION_SINGLE_BUCK) 
-		&& waveform == WAVE_BUCK_SINGLE_RECTANGLE_DISCHARGE
+		&& waveform[`CONTINUE_OR_SINGLE_BIT] == 1'b1
 		)
-		is_single_discharge <= 1'b0;
+		will_single_discharge <= 1'b0;
 	else if(signle_discharge_button_pressed == 1'b1)
-		is_single_discharge <= 1'b1;
+		will_single_discharge <= 1'b1;
 end
 
 // timer
@@ -388,7 +440,7 @@ always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
 		timer_deion_single_buck <= 64'd0;
-	else if(current_state == S_DEION_SINGLE_BUCK && is_single_discharge == 1'b0)
+	else if(current_state == S_DEION_SINGLE_BUCK && will_single_discharge == 1'b0)
 		timer_deion_single_buck <= timer_deion_single_buck + 1'b1; // per 10ns +1
 	else
 		timer_deion_single_buck <= 64'd0;
@@ -398,7 +450,7 @@ always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
 		timer_after_start_single <= 16'd0;
-	else if(current_state == S_DEION_SINGLE_BUCK && is_single_discharge == 1'b1)
+	else if(current_state == S_DEION_SINGLE_BUCK && will_single_discharge == 1'b1)
 		timer_after_start_single <= timer_after_start_single + 1'b1; // per 10ns +1
 	else
 		timer_after_start_single <= 16'd0;
@@ -438,7 +490,7 @@ begin
 	begin
 		if(timer_buck_4us_0 == 16'd199) // timer_buck_4us_0 at 2us reset timer_buck_4us_180
 			timer_buck_4us_180 <= 16'd0;
-		else if(timer_buck_4us_180 <= inductor_charging_time_0 + DEAD_TIME + DEAD_TIME)
+		else if(timer_buck_4us_180 <= 201 + DEAD_TIME + DEAD_TIME)
 			timer_buck_4us_180 <= timer_buck_4us_180 + 1'd1; // per 10ns +1
 	end
 	else
@@ -471,35 +523,55 @@ end
 //********************************************************************//
 wire [15:0] i_set;
 // one_cycle_control
-reg [15:0] shift_reg[199:0];
+reg [15:0] shift_reg_1[199:0];
+reg [15:0] shift_reg_2[199:0];
 integer i;
+
 always@(posedge clk or negedge rst_n) 
 begin
     if (rst_n == 1'b0) 
 	begin
         for (i = 0; i < 200; i = i + 1)
-            shift_reg[i] <= 16'd0;
+            shift_reg_1[i] <= 16'd0;
         inductor_charging_time_180 <= 16'd0;
     end 
 	else 
 	begin
-        shift_reg[0] <= inductor_charging_time_0;
+        shift_reg_1[0] <= inductor_charging_time_0;
         for (i = 1; i < 200; i = i + 1)
-            shift_reg[i] <= shift_reg[i - 1];
-        inductor_charging_time_180 <= shift_reg[199];
+            shift_reg_1[i] <= shift_reg_1[i - 1];
+        inductor_charging_time_180 <= shift_reg_1[199];
+    end
+end
+
+always@(posedge clk or negedge rst_n) 
+begin
+    if (rst_n == 1'b0) 
+	begin
+        for (i = 0; i < 200; i = i + 1)
+            shift_reg_2[i] <= 16'd0;
+        inductor_charging_time_180_openloop <= 16'd0;
+    end 
+	else 
+	begin
+        shift_reg_2[0] <= inductor_charging_time_0_openloop;
+        for (i = 1; i < 200; i = i + 1)
+            shift_reg_2[i] <= shift_reg_2[i - 1];
+        inductor_charging_time_180_openloop <= shift_reg_2[199];
     end
 end
 
 one_cycle_control
 #(
-	.Vin( 16'd120 ), // input voltage 120V
-	.L( 16'd3300 ), // inductance(uH) 3.3uH = 3300nH
-	.fs( 16'd250 ) // frequency 250kHz (Ts = 4us)
+	.Vin( INPUT_VOL ), // input voltage 120V
+	.L( INDUCTANCE ), // inductance(uH) 3.3uH = 3300nH
+	.fs( 16'd250 ), // frequency 250kHz (Ts = 4us)
+	.V_GAP_FIXED( V_GAP_FIXED ) // discharge gap voltage
 ) one_cycle_control_inst
 (
 	.clk( clk ),
 	.rst_n( rst_n ),
-	
+
 	.sample_current( corrected_current ),
 	.sample_voltage( sample_voltage ),
 
@@ -524,4 +596,43 @@ i_set_generation iset_generation_inst
 	.i_set( i_set )
 );
 
+// breakdown_detect
+breakdown_detect
+#(
+    .IS_OPEN_CUR_DETECT( IS_OPEN_CUR_DETECT ),
+	.DEION_THRESHOLD_VOL( DEION_THRESHOLD_VOL ),
+	.BREAKDOWN_THRESHOLD_CUR( BREAKDOWN_THRESHOLD_CUR ),
+	.BREAKDOWN_THRESHOLD_VOL( BREAKDOWN_THRESHOLD_VOL ),
+    .BREAKDOWN_THRESHOLD_TIME( BREAKDOWN_THRESHOLD_TIME )
+) breakdown_detect_inst
+(
+	.clk( clk ), // 100MHz 10ns
+	.rst_n( rst_n ),
+	
+	// adc
+	.sample_current( sample_current ), // (A)
+	.sample_voltage( sample_voltage ), // (V)
+
+    // state
+    .current_state( current_state ), // S_WAIT_BREAKDOWN = 8'b00000001
+
+    .is_breakdown( is_breakdown )
+);
+
+openloop_control
+#(
+	.CURRENT_STAND_CHARGING_TIMES( CURRENT_STAND_CHARGING_TIMES ), // one cycle current stand
+    .CURRENT_RISE_CHARGING_TIMES( CURRENT_RISE_CHARGING_TIMES ), // one cycle current rise 5A
+    .CURRENT_RISE_CYCLE_TIMES( CURRENT_RISE_CYCLE_TIMES ) // current rise 5A
+) openloop_control_inst
+(
+	.clk(clk),
+	.rst_n(rst_n),
+
+	.timer_buck_4us_0(timer_buck_4us_0),
+
+    .current_state(current_state),
+
+	.inductor_charging_time_0_openloop(inductor_charging_time_0_openloop)
+);
 endmodule

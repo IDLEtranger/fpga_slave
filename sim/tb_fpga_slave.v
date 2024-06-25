@@ -21,6 +21,8 @@ module tb_fpga_slave;
     wire mosfet_deion;
 
     wire operation_indicator;
+    wire will_single_discharge_indicator;
+    wire is_breakdown;
     
     // Instantiate the FPGA Slave
     fpga_slave fpga_slave_inst (
@@ -40,7 +42,9 @@ module tb_fpga_slave;
         .mosfet_res1(mosfet_res1),
         .mosfet_res2(mosfet_res2),
         .mosfet_deion(mosfet_deion),
-        .operation_indicator(operation_indicator)
+        .operation_indicator(operation_indicator),
+        .will_single_discharge_indicator(will_single_discharge_indicator),
+        .is_breakdown(is_breakdown)
     );
 
     // Clock generation for FPGA
@@ -73,9 +77,16 @@ module tb_fpga_slave;
         spi_transaction(8'h32);  //
         spi_transaction(8'h00);  //
 
+        /*
+        localparam WAVE_RES_CO_DISCHARGE = 16'b1000_0000_0000_0000; // 0x8000
+        localparam WAVE_BUCK_CC_RECTANGLE_DISCHARGE = 16'b0010_0000_0000_0001; // 0x2001
+        localparam WAVE_BUCK_CC_TRIANGLE_DISCHARGE = 16'b0010_0000_0000_0010; // 0x2002
+        localparam WAVE_BUCK_SC_RECTANGLE_DISCHARGE = 16'b0110_0000_0000_0001; // 0x6001
+        localparam WAVE_BUCK_SO_RECTANGLE_DISCHARGE = 16'b0100_0000_0000_0001; // 0x4001
+        */
         spi_transaction(8'h9C);  // waveform
-        spi_transaction(8'h04);  // single test discharge
-        spi_transaction(8'h00);  // 
+        spi_transaction(8'h01);  // single test discharge
+        spi_transaction(8'h40);  // 
         /*
         spi_transaction(8'h00);  // buck reac discharge
         spi_transaction(8'h01);  // 
@@ -103,28 +114,28 @@ module tb_fpga_slave;
     initial begin
         #5000;
         // deion
-        ad1_in = 12'hFFF; // 5V (0A)
-        ad2_in = 12'h800; // 0V (0V)
+        ad1_in = 12'hB99 - 12'd80;
+        ad2_in = 12'h124 + 12'd94; 
         #1000000; // 1ms + DEAD_TIME
         
         //discharge
-        ad1_in = 12'h400; // -2.5V (30A)
-        ad2_in = 12'h68F; // -0.893V (25V)
+        ad1_in = 12'h998 - 12'd80; // 1V (30A)
+        ad2_in = 12'h68F + 12'd94; // -0.893V (25V)
         #100000; // 100us
         
         // deion
-        ad1_in = 12'hFFF; // 5V (0A)
-        ad2_in = 12'h800; // 0V (0V)
+        ad1_in = 12'hBFF - 12'd80; // 2.5V (0A)
+        ad2_in = 12'h800 + 12'd94; // 0V (0V)
         #2899990;
         
         // wait breakdown
-        ad1_in = 12'hE00; // 3.75V approximation (5A)
-        ad2_in = 12'h124; // 4.285V approximation (120V)
+        ad1_in = 12'hB99 - 12'd80; // 2.25V approximation (5A)
+        ad2_in = 12'h124 + 12'd94; // 4.285V approximation (120V)
         #50000; // 50us
 
         //discharge
-        ad1_in = 12'h400; // -2.5V (30A)
-        ad2_in = 12'h68F; // -0.893V (25V)
+        ad1_in = 12'h998 - 12'd80; // 1.5V (30A)
+        ad2_in = 12'h68F + 12'd94; // -0.893V (25V)
         #100000; // 100us
 
     end

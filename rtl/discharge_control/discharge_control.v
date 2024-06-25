@@ -1,4 +1,24 @@
 module discharge_control 
+#(
+	parameter DEAD_TIME = 16'd12, // Because of the extra diodes, the dead time can be long but not short.
+	parameter WAIT_BREAKDOWN_MAXTIME = 16'd10000, // 100us, wait breakdown max timer count (10ns)
+	parameter WAIT_BREAKDOWN_MINTIME = 16'd300, // 3us, wait breakdown min timer count (10ns)
+	parameter MAX_CURRENT_LIMIT = 16'd78, // 78A, max current limit (A)
+
+	parameter IS_OPEN_CUR_DETECT = 1'b0, // 0 means breakdown detection do not consider sample current
+	parameter DEION_THRESHOLD_VOL = 16'd8, // below it means deion
+	parameter BREAKDOWN_THRESHOLD_CUR = 16'd15, // current rise threshold(A), above it means breakdown &&
+	parameter BREAKDOWN_THRESHOLD_VOL = 16'd30, // voltage fall threshold(A), below it means breakdown
+	parameter BREAKDOWN_THRESHOLD_TIME = 16'd10,
+
+	parameter INPUT_VOL = 16'd120, // input voltage 120V
+	parameter INDUCTANCE = 16'd3300, // inductance(uH) 3.3uH = 3300nH
+	parameter V_GAP_FIXED = 16'd20, // discharge gap voltage
+
+	parameter CURRENT_STAND_CHARGING_TIMES = 16'd80, // one cycle current stand
+    parameter CURRENT_RISE_CHARGING_TIMES = 16'd120, // one cycle current rise 5A
+    parameter CURRENT_RISE_CYCLE_TIMES = 16'd3 // current rise 5A
+)
 (
 	input clk, // 100MHz 10ns
 	input rst_n,
@@ -26,7 +46,7 @@ module discharge_control
 	input signed [15:0] sample_voltage,
 
 	// signle_discharge_button
-	input wire signle_discharge_button,
+	input wire signle_discharge_button_pressed,
 	
 	// output mosfet control signal
 	output wire [1:0] mosfet_buck1, // Buck1:上管 下管
@@ -36,7 +56,9 @@ module discharge_control
 	output wire mosfet_deion, // Qoff 消电离回路
 
 	// opeartion indicator
-	output wire is_operation
+	output wire is_operation,
+	output wire will_single_discharge,
+	output is_breakdown
 );
 
 //********************************************************************//
@@ -51,7 +73,6 @@ module discharge_control
 	(* preserve *) wire [15:0] Toff_data;
 	(* preserve *) wire [15:0] Ip_data;
 	(* preserve *) wire [15:0] waveform_data;
-	(* preserve *) wire signle_discharge_button_pressed;
 `else
 	wire is_machine;
 	reg is_machine_key;
@@ -60,7 +81,6 @@ module discharge_control
 	wire [15:0] Toff_data;
 	wire [15:0] Ip_data;
 	wire [15:0] waveform_data;
-	wire signle_discharge_button_pressed;
 `endif
 
 always@(posedge clk or negedge rst_n)
@@ -77,13 +97,24 @@ assign is_machine = (is_machine_spi && is_machine_key);
 
 mos_control
 #(
-	.DEAD_TIME( 16'd10 ), // Because of the extra diodes, the dead time can be long but not short.
-	.TEST_INDUCTOR_CHARGING_TIME( 16'd40 ), // 400ns
-	.WAIT_BREAKDOWN_MAXTIME( 16'd10000 ), // 100us, wait breakdown max timer count (10ns)
-	.WAIT_BREAKDOWN_MINTIME( 16'd300 ), // 3us, wait breakdown min timer count (10ns)
-	.MAX_CURRENT_LIMIT( 16'd78 ), // 78A, max current limit (A)
-	.BREAKDOWN_THRESHOLD_CUR( 16'd15 ), // 15A, current rise threshold(A), above it means breakdown &&
-	.BREAKDOWN_THRESHOLD_VOL( 12'd40 ) // 40V, voltage fall threshold(A), below it means breakdown
+	.DEAD_TIME( DEAD_TIME ), // Because of the extra diodes, the dead time can be long but not short.
+	.WAIT_BREAKDOWN_MAXTIME( WAIT_BREAKDOWN_MAXTIME ), // 100us, wait breakdown max timer count (10ns)
+	.WAIT_BREAKDOWN_MINTIME( WAIT_BREAKDOWN_MINTIME ), // 3us, wait breakdown min timer count (10ns)
+	.MAX_CURRENT_LIMIT( MAX_CURRENT_LIMIT ), // 78A, max current limit (A)
+
+	.IS_OPEN_CUR_DETECT( IS_OPEN_CUR_DETECT ), // 0 means breakdown detection do not consider sample current
+	.DEION_THRESHOLD_VOL( DEION_THRESHOLD_VOL ), // below it means deion
+	.BREAKDOWN_THRESHOLD_CUR( BREAKDOWN_THRESHOLD_CUR ), // current rise threshold(A), above it means breakdown &&
+	.BREAKDOWN_THRESHOLD_VOL( BREAKDOWN_THRESHOLD_VOL ), // voltage fall threshold(A), below it means breakdown
+	.BREAKDOWN_THRESHOLD_TIME( BREAKDOWN_THRESHOLD_TIME ),
+
+	.INPUT_VOL( INPUT_VOL ), // input voltage 120V
+	.INDUCTANCE ( INDUCTANCE ), // inductance(uH) 3.3uH = 3300nH
+	.V_GAP_FIXED( V_GAP_FIXED ), // discharge gap voltage
+	
+	.CURRENT_STAND_CHARGING_TIMES( CURRENT_STAND_CHARGING_TIMES ), // one cycle current stand
+    .CURRENT_RISE_CHARGING_TIMES( CURRENT_RISE_CHARGING_TIMES ), // one cycle current rise 5A
+    .CURRENT_RISE_CYCLE_TIMES( CURRENT_RISE_CYCLE_TIMES ) // current rise 5A
 )  mos_control_instance
 (
 	.clk(clk), // 100MHz 10ns
@@ -117,8 +148,9 @@ mos_control
 	.mosfet_deion(mosfet_deion),
 
 	// opeartion indicator
-	.is_operation(is_operation)
-
+	.is_operation(is_operation),
+	.will_single_discharge(will_single_discharge),
+	.is_breakdown(is_breakdown)
 );
 
 parameter_generator param_gen_inst
@@ -146,17 +178,6 @@ parameter_generator param_gen_inst
 	.waveform_data_async(waveform_data_async),
 	.waveform_data(waveform_data)
 );
-
-key_debounce key_sigle_discharge_debounce_inst
-(
-    .clk(clk),
-    .rst_n(rst_n),
-    .button_in( signle_discharge_button ),
-    .button_posedge(  ),
-    .button_negedge( signle_discharge_button_pressed ),
-    .button_out(  )
-); 
-
 
 endmodule
 

@@ -4,7 +4,7 @@
 // MODULE: LPM_DIVIDE 
 
 // ============================================================
-// File Name: divider.v
+// File Name: divider_32d16.v
 // Megafunction Name(s):
 // 			LPM_DIVIDE
 //
@@ -36,7 +36,7 @@
 // synopsys translate_off
 `timescale 1 ps / 1 ps
 // synopsys translate_on
-module divider (
+module divider_32d16 (
 	clock,
 	denom,
 	numer,
@@ -44,15 +44,15 @@ module divider (
 	remain);
 
 	input	  clock;
-	input	[31:0]  denom;
-	input	[63:0]  numer;
-	output	[63:0]  quotient;
-	output	[31:0]  remain;
+	input	[15:0]  denom;
+	input	[31:0]  numer;
+	output	[31:0]  quotient;
+	output	[15:0]  remain;
 
-	wire [63:0] sub_wire0;
-	wire [31:0] sub_wire1;
-	wire [63:0] quotient = sub_wire0[63:0];
-	wire [31:0] remain = sub_wire1[31:0];
+	wire [31:0] sub_wire0;
+	wire [15:0] sub_wire1;
+	wire [31:0] quotient = sub_wire0[31:0];
+	wire [15:0] remain = sub_wire1[15:0];
 
 	lpm_divide	LPM_DIVIDE_component (
 				.clock (clock),
@@ -68,8 +68,8 @@ module divider (
 		LPM_DIVIDE_component.lpm_nrepresentation = "SIGNED",
 		LPM_DIVIDE_component.lpm_pipeline = 1,
 		LPM_DIVIDE_component.lpm_type = "LPM_DIVIDE",
-		LPM_DIVIDE_component.lpm_widthd = 32,
-		LPM_DIVIDE_component.lpm_widthn = 64;
+		LPM_DIVIDE_component.lpm_widthd = 16,
+		LPM_DIVIDE_component.lpm_widthn = 32;
 
 
 endmodule
@@ -90,22 +90,22 @@ endmodule
 // Retrieval info: CONSTANT: LPM_NREPRESENTATION STRING "SIGNED"
 // Retrieval info: CONSTANT: LPM_PIPELINE NUMERIC "1"
 // Retrieval info: CONSTANT: LPM_TYPE STRING "LPM_DIVIDE"
-// Retrieval info: CONSTANT: LPM_WIDTHD NUMERIC "32"
-// Retrieval info: CONSTANT: LPM_WIDTHN NUMERIC "64"
+// Retrieval info: CONSTANT: LPM_WIDTHD NUMERIC "16"
+// Retrieval info: CONSTANT: LPM_WIDTHN NUMERIC "32"
 // Retrieval info: USED_PORT: clock 0 0 0 0 INPUT NODEFVAL "clock"
-// Retrieval info: USED_PORT: denom 0 0 32 0 INPUT NODEFVAL "denom[31..0]"
-// Retrieval info: USED_PORT: numer 0 0 64 0 INPUT NODEFVAL "numer[63..0]"
-// Retrieval info: USED_PORT: quotient 0 0 64 0 OUTPUT NODEFVAL "quotient[63..0]"
-// Retrieval info: USED_PORT: remain 0 0 32 0 OUTPUT NODEFVAL "remain[31..0]"
+// Retrieval info: USED_PORT: denom 0 0 16 0 INPUT NODEFVAL "denom[15..0]"
+// Retrieval info: USED_PORT: numer 0 0 32 0 INPUT NODEFVAL "numer[31..0]"
+// Retrieval info: USED_PORT: quotient 0 0 32 0 OUTPUT NODEFVAL "quotient[31..0]"
+// Retrieval info: USED_PORT: remain 0 0 16 0 OUTPUT NODEFVAL "remain[15..0]"
 // Retrieval info: CONNECT: @clock 0 0 0 0 clock 0 0 0 0
-// Retrieval info: CONNECT: @denom 0 0 32 0 denom 0 0 32 0
-// Retrieval info: CONNECT: @numer 0 0 64 0 numer 0 0 64 0
-// Retrieval info: CONNECT: quotient 0 0 64 0 @quotient 0 0 64 0
-// Retrieval info: CONNECT: remain 0 0 32 0 @remain 0 0 32 0
-// Retrieval info: GEN_FILE: TYPE_NORMAL divider.v TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL divider.inc FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL divider.cmp FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL divider.bsf FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL divider_inst.v TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL divider_bb.v FALSE
+// Retrieval info: CONNECT: @denom 0 0 16 0 denom 0 0 16 0
+// Retrieval info: CONNECT: @numer 0 0 32 0 numer 0 0 32 0
+// Retrieval info: CONNECT: quotient 0 0 32 0 @quotient 0 0 32 0
+// Retrieval info: CONNECT: remain 0 0 16 0 @remain 0 0 16 0
+// Retrieval info: GEN_FILE: TYPE_NORMAL divider_32d16.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL divider_32d16.inc FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL divider_32d16.cmp FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL divider_32d16.bsf FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL divider_32d16_inst.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL divider_32d16_bb.v TRUE
 // Retrieval info: LIB_FILE: lpm

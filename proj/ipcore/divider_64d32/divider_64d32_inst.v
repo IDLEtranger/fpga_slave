@@ -1,4 +1,4 @@
-divider	divider_inst (
+divider_64d32	divider_64d32_inst (
 	.clock ( clock_sig ),
 	.denom ( denom_sig ),
 	.numer ( numer_sig ),

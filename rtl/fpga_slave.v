@@ -1,4 +1,16 @@
 `define DEBUG_MODE
+/* 
+waveform
+x000_0000_0000_0000; x=0: BUCK discharge, x=1: RES discharge
+0x00_0000_0000_0000; x=0: continue discharge, x=1: single discharge
+00x0_0000_0000_0000; x=0: openloop, x=1: closedloop
+
+localparam WAVE_RES_CO_DISCHARGE = 16'b1000_0000_0000_0000; // 0x8000
+localparam WAVE_BUCK_CC_RECTANGLE_DISCHARGE = 16'b0010_0000_0000_0001; // 0x2001
+localparam WAVE_BUCK_CC_TRIANGLE_DISCHARGE = 16'b0010_0000_0000_0010; // 0x2002
+localparam WAVE_BUCK_SC_RECTANGLE_DISCHARGE = 16'b0110_0000_0000_0001; // 0x6001
+localparam WAVE_BUCK_SO_RECTANGLE_DISCHARGE = 16'b0100_0000_0000_0001; // 0x4001
+*/
 module fpga_slave
 (
     /** CLOCK & RESET **/
@@ -23,14 +35,16 @@ module fpga_slave
     output wire miso,
 
     /** MOSFET CONTROL SIGNAL **/
-    output wire [1:0] mosfet_buck1, // Buck1:上管 下管
-	output wire [1:0] mosfet_buck2, // Buck2:上管 下管
-	output wire [1:0] mosfet_res1, // Res1:上管 下管
-	output wire [1:0] mosfet_res2, // Res2:上管 下管
-	output wire mosfet_deion, // Qoff 消电离回路
+    output wire [1:0] mosfet_buck1, // Buck1:upper lower
+	output wire [1:0] mosfet_buck2, // Buck2:upper lower
+	output wire [1:0] mosfet_res1, // Res1:upper lower
+	output wire [1:0] mosfet_res2, // Res2:upper lower
+	output wire mosfet_deion, // Qoff: deion
 
     /** OPERATION INDICATOR **/
-    output wire operation_indicator
+    output wire operation_indicator,
+    output wire will_single_discharge_indicator,
+    output is_breakdown
 );
 /* clock */
 `ifdef DEBUG_MODE
@@ -53,6 +67,7 @@ assign ad2_clk = clk_65M;
 /*********************************/
 wire machine_stop_ack_key;
 wire machine_start_ack_key;
+wire signle_discharge_button_pressed;
 
 /*********************************/
 /************** ADC **************/
@@ -81,16 +96,13 @@ wire change_Toff_ack;
 wire change_Ip_ack;
 wire change_waveform_ack;
 
-/*******************************************/
+/*********************************************/
 /************* DISCHARGE CONTROL *************/
-/*******************************************/
-// wire [1:0] mosfet_buck1, // Buck1:上管 下管
-// wire [1:0] mosfet_buck2, // Buck2:上管 下管
-// wire [1:0] mosfet_res1, // Res1:上管 下管
-// wire [1:0] mosfet_res2, // Res2:上管 下管
-// wire mosfet_deion // Qoff 消电离回路
+/*********************************************/
 wire is_operation;
 assign operation_indicator = ~is_operation;
+wire will_single_discharge;
+assign will_single_discharge_indicator = ~will_single_discharge;
 
 //********************************************************************//
 //*************************** Instantiation **************************//
@@ -144,7 +156,27 @@ spi_slave_cmd spi_slave_cmd_inst
     .feedback_data_async(32'h0F0F0F0F)
 );
 
-discharge_control discharge_ctrl_inst
+discharge_control 
+#(
+	.DEAD_TIME( 16'd12 ), // Because of the extra diodes, the dead time can be long but not short.
+	.WAIT_BREAKDOWN_MAXTIME( 16'd10000 ), // 100us, wait breakdown max timer count (10ns)
+	.WAIT_BREAKDOWN_MINTIME( 16'd300 ), // 3us, wait breakdown min timer count (10ns)
+	.MAX_CURRENT_LIMIT( 16'd120 ), // 78A, max current limit (A)
+
+	.IS_OPEN_CUR_DETECT( 1'b0 ), // 0 means breakdown detection do not consider sample current
+    .DEION_THRESHOLD_VOL( 16'd5 ),
+	.BREAKDOWN_THRESHOLD_CUR( 16'd15 ), // current rise threshold(A), above it means breakdown &&
+	.BREAKDOWN_THRESHOLD_VOL( 16'd40 ), // voltage fall threshold(A), below it means breakdown
+	.BREAKDOWN_THRESHOLD_TIME( 16'd50 ),
+
+	.INPUT_VOL( 16'd120 ), // input voltage 120V
+	.INDUCTANCE ( 16'd3300 ), // inductance(uH) 3.3uH = 3300nH
+    .V_GAP_FIXED( 16'd20 ), // discharge gap voltage
+
+    .CURRENT_STAND_CHARGING_TIMES( 16'd90 ), // one cycle current stand
+    .CURRENT_RISE_CHARGING_TIMES( 16'd120 ), // one cycle current rise 5A
+    .CURRENT_RISE_CYCLE_TIMES( 16'd3 ) // current rise 5A
+) discharge_ctrl_inst
 (
     .clk(clk_100M),
     .rst_n(sys_rst_n),
@@ -172,7 +204,7 @@ discharge_control discharge_ctrl_inst
     .sample_voltage(sample_voltage),
 
     // signle_discharge_button
-    .signle_discharge_button(signle_discharge_button),
+    .signle_discharge_button_pressed(signle_discharge_button_pressed),
 
     // output mosfet control signal
     .mosfet_buck1(mosfet_buck1),
@@ -182,7 +214,9 @@ discharge_control discharge_ctrl_inst
     .mosfet_deion(mosfet_deion),
 
     // opeartion indicator
-    .is_operation(is_operation)
+    .is_operation(is_operation),
+    .will_single_discharge(will_single_discharge),
+    .is_breakdown(is_breakdown)
 );
 
 key_debounce key_start_debounce_inst
@@ -201,6 +235,16 @@ key_debounce key_stop_debounce_inst
     .button_in(key_stop),
     .button_posedge(  ),
     .button_negedge( machine_stop_ack_key ),
+    .button_out(  )
+); 
+
+key_debounce key_sigle_discharge_debounce_inst
+(
+    .clk(clk_100M),
+    .rst_n(sys_rst_n),
+    .button_in( signle_discharge_button ),
+    .button_posedge(  ),
+    .button_negedge( signle_discharge_button_pressed ),
     .button_out(  )
 ); 
 endmodule

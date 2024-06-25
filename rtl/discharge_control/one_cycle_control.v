@@ -4,7 +4,8 @@ module one_cycle_control
 #(
 	parameter Vin = 16'd120, // input voltage 120V
 	parameter L = 16'd3300, // inductance(uH) 3.3uH = 3300nH
-	parameter fs = 16'd250 // frequency 250kHz (Ts = 4us)
+	parameter fs = 16'd250, // frequency 250kHz (Ts = 4us)
+	parameter V_GAP_FIXED = 16'd25 // discharge gap voltage
 )
 (
 	input clk,
@@ -15,7 +16,7 @@ module one_cycle_control
 
 	input [15:0] timer_buck_4us_0,
 
-	input [15:0] i_set, //实际总电流设定值，需要准换成单路电流参考值iref=i_set/2路
+	input [15:0] i_set, // total current，iref = i_set / 2 (number of channels)
 		
 	output reg [15:0] inductor_charging_time
 );
@@ -37,7 +38,7 @@ end
 //每个开关频率开始时刻触发采样
 reg [15:0] Id_in_Ts;
 reg	[15:0] V_gap;
-reg [7:0] i_ref; // 根据电流设定值计算出的单路电流参考值，用于单周期占空比计算
+reg [7:0] i_ref;
 
 always@(posedge clk or negedge rst_n)
 begin
@@ -53,7 +54,7 @@ begin
 		begin
 			Id_in_Ts <= sample_current_reg;
 			//V_gap <= sample_voltage;
-			V_gap <= 16'd25; // set a fixed discharge gap voltage value for test
+			V_gap <= V_GAP_FIXED; // set a fixed discharge gap voltage value for test
 			if(i_set > 100)
 				i_ref <= 8'd50;
 			else
@@ -117,7 +118,7 @@ begin
 end
 
 wire [19:0] inductor_charging_time_x1000000;
-divider	divider_inst 
+divider_64d32	divider_64d32_inst 
 (
 	.clock ( clk ),
 	.denom ( denominator1 ),
@@ -139,15 +140,17 @@ always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
 			inductor_charging_time <= 16'd0;
-	else
+	else if (timer_buck_4us_0 != 16'b0)
 	begin
 		if((inductor_charging_time_reg > 16'd400))
 			inductor_charging_time <= 16'd0;
-		else if((inductor_charging_time_reg > 13'd200 )&&(inductor_charging_time_reg <= 13'd400))
-			inductor_charging_time <= 16'd200; // keep the inductor charging time below 200
+		else if((inductor_charging_time_reg > 13'd180 )&&(inductor_charging_time_reg <= 13'd400))
+			inductor_charging_time <= 16'd180; // keep the inductor charging time below 30% of the cycle
 		else
 			inductor_charging_time <= inductor_charging_time_reg[15:0];
 	end
+	else 
+		inductor_charging_time <= 16'd0;
 end
 
 endmodule
