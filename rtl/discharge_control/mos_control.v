@@ -124,6 +124,7 @@ reg [15:0] timer_after_start_single; // in S_DEION_SINGLE_BUCK, after will_singl
 wire [15:0] timer_after_breakdown; // in S_WAIT_BREAKDOWN after is_breakdown == 1'b1, every 10ns ++, reset when go into S_BUCK_INTERLEAVE
 
 // buck wave timer
+reg [15:0] timer_cycle_num;
 reg [15:0] timer_buck_4us_0; // in S_BUCK_INTERLEAVE every 10ns ++, reset every 4us
 reg [15:0] timer_buck_4us_180; // reset when timer_buck_4us_0 reaches 2us, ends in inductor_charging_time_0 + DEAD_TIME + DEAD_TIME
 
@@ -356,7 +357,8 @@ begin
 						mosfet_buck2 <= 2'b10; // charge inductor
 					else if(timer_buck_4us_180 >= inductor_charging_time_180 + DEAD_TIME && timer_buck_4us_180 < inductor_charging_time_180 + DEAD_TIME + DEAD_TIME)
 						mosfet_buck2 <= 2'b00; // wait DEAD_TIME for Qup turn off
-					else if(timer_buck_4us_180 >= inductor_charging_time_180 + DEAD_TIME + DEAD_TIME) /* !first entry! */
+					else if(timer_buck_4us_180 >= inductor_charging_time_180 + DEAD_TIME + DEAD_TIME
+							&& timer_cycle_num >= 1) /* !first entry! */
 						mosfet_buck2 <= 2'b01; // discharge inductor
 				end
 				else if ( waveform[`OPEN_OR_CLOSE_BIT] == 1'b0 ) // openloop
@@ -380,7 +382,8 @@ begin
 						mosfet_buck2 <= 2'b10; // charge inductor
 					else if(timer_buck_4us_180 >= inductor_charging_time_180_openloop + DEAD_TIME && timer_buck_4us_180 < inductor_charging_time_180_openloop + DEAD_TIME + DEAD_TIME)
 						mosfet_buck2 <= 2'b00; // wait DEAD_TIME for Qup turn off
-					else if(timer_buck_4us_180 >= inductor_charging_time_180_openloop + DEAD_TIME + DEAD_TIME) /* !first entry! */
+					else if(timer_buck_4us_180 >= inductor_charging_time_180_openloop + DEAD_TIME + DEAD_TIME
+							&& timer_cycle_num >= 1) /* !first entry! */
 						mosfet_buck2 <= 2'b01; // discharge inductor
 				end
 			end
@@ -497,6 +500,16 @@ begin
 	end
 	else
 		timer_buck_4us_0 <= 16'd0;
+end
+// reg [15:0] timer_cycle_num
+always@(posedge clk or negedge rst_n)
+begin
+	if(rst_n == 1'b0)
+		timer_cycle_num <= 16'd0;
+    else if (current_state == S_DEION || current_state == S_DEION_SINGLE_BUCK)
+        timer_cycle_num <= 16'd0;
+	else if (timer_buck_4us_0 == 16'd399)
+		timer_cycle_num <= timer_cycle_num + 16'd1;
 end
 // timer_buck_4us_180
 always@(posedge clk or negedge rst_n)
@@ -633,23 +646,23 @@ breakdown_detect
     // state
     .current_state( current_state ), // S_WAIT_BREAKDOWN = 8'b00000001
 
+	// key
+	.signle_discharge_button_pressed( signle_discharge_button_pressed ),
+
     .is_breakdown( is_breakdown )
 );
 
 openloop_control
 #(
-	.CURRENT_STAND_CHARGING_TIMES( CURRENT_STAND_CHARGING_TIMES ), // one cycle current stand
-    .CURRENT_RISE_CHARGING_TIMES( CURRENT_RISE_CHARGING_TIMES ), // one cycle current rise 5A
-    .CURRENT_RISE_CYCLE_TIMES( CURRENT_RISE_CYCLE_TIMES ) // current rise 5A
+	.CURRENT_STAND_CHARGING_TIMES( CURRENT_STAND_CHARGING_TIMES ),
+    .CURRENT_RISE_CHARGING_TIMES( CURRENT_RISE_CHARGING_TIMES ),
+    .CURRENT_RISE_CYCLE_TIMES( CURRENT_RISE_CYCLE_TIMES )
 ) openloop_control_inst
 (
 	.clk(clk),
 	.rst_n(rst_n),
 
-	.timer_buck_4us_0(timer_buck_4us_0),
-
-    .current_state(current_state),
-
+    .timer_cycle_num(timer_cycle_num),
 	.inductor_charging_time_0_openloop(inductor_charging_time_0_openloop)
 );
 
@@ -663,7 +676,8 @@ pulse_start_timer_inst
     .clk( clk ),
     .rst_n( rst_n ),
     .timer_reset( timer_after_breakdown_reset ),
-    .start_pulse( is_breakdown ),
+    .timer_stand( 1'b0 ),
+    .timer_start( is_breakdown ),
     .output_timer( timer_after_breakdown )
 );
 endmodule
