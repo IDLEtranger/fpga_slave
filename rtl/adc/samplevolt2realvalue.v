@@ -27,16 +27,16 @@ begin
     end
     else
     begin
-        sample_current_reg <= (volt_ch1 - 2500); // sample(mV) to real(A)
-        sample_voltage_reg <= (volt_ch2 * 28); // sample(mV) to real(V)
+        sample_current_reg <= (volt_ch1 * 50); // 50A/V
+        sample_voltage_reg <= (volt_ch2 * 500); // 500V/V
     end
 end
 
 divider_32d16	divider_32d16_inst2 
 (
 	.clock ( ad_clk ),
-	.denom ( 16'd50 ),
-	.numer ( -sample_current_reg ),
+	.denom ( 16'd1000 ), // mV -> V
+	.numer ( sample_current_reg ),
 	.quotient ( sample_current ),
 	.remain (  )
 );
@@ -45,7 +45,7 @@ divider_32d16	divider_32d16_inst1
 (
 	.clock ( ad_clk ),
 	.denom ( 16'd1000 ),
-	.numer ( -sample_voltage_reg ),
+	.numer ( sample_voltage_reg ),
 	.quotient ( sample_voltage ),
 	.remain (  )
 );

@@ -59,9 +59,9 @@ module mos_control
 	0x00_0000_0000_0000; x=0: continue discharge, x=1: single discharge
 	00x0_0000_0000_0000; x=0: openloop, x=1: closedloop
 */
-`define BUCK_OR_RES_BIT 15
-`define CONTINUE_OR_SINGLE_BIT 14
-`define OPEN_OR_CLOSE_BIT 13
+localparam BUCK_OR_RES_BIT = 15;
+localparam CONTINUE_OR_SINGLE_BIT = 14;
+localparam OPEN_OR_CLOSE_BIT = 13;
 
 localparam WAVE_RES_CO_DISCHARGE = 16'b1000_0000_0000_0000; // 0x8000
 
@@ -174,7 +174,7 @@ begin
 	case(current_state)
 		S_DEION:
 		begin
-			if(waveform[`CONTINUE_OR_SINGLE_BIT] == 1'b1)
+			if(waveform[CONTINUE_OR_SINGLE_BIT] == 1'b1)
 				next_state <= S_DEION_SINGLE_BUCK;
 			else if(timer_deion >= Toff_timer && is_operation == 1'b1)
 				next_state <= S_WAIT_BREAKDOWN;
@@ -225,7 +225,7 @@ begin
 
 		S_BUCK_INTERLEAVE:
 		begin
-			if(timer_buck_interleave >= Ton_timer && waveform[`CONTINUE_OR_SINGLE_BIT] == 1'b1) 
+			if(timer_buck_interleave >= Ton_timer && waveform[CONTINUE_OR_SINGLE_BIT] == 1'b1) 
 				next_state <= S_DEION_SINGLE_BUCK;
 			else if(timer_buck_interleave >= Ton_timer) 
 				next_state <= S_DEION; 
@@ -336,7 +336,7 @@ begin
 			/******************* buck wave *******************/
 			S_BUCK_INTERLEAVE:
 			begin
-				if ( waveform[`OPEN_OR_CLOSE_BIT] == 1'b1 ) // closedloop
+				if ( waveform[OPEN_OR_CLOSE_BIT] == 1'b1 ) // closedloop
 				begin
 					// buck1, wait DEAD_TIME before turn on mosfet
 					if(timer_buck_4us_0 >= 16'd0 && timer_buck_4us_0 < DEAD_TIME)
@@ -361,7 +361,7 @@ begin
 							&& timer_cycle_num >= 1) /* !first entry! */
 						mosfet_buck2 <= 2'b01; // discharge inductor
 				end
-				else if ( waveform[`OPEN_OR_CLOSE_BIT] == 1'b0 ) // openloop
+				else if ( waveform[OPEN_OR_CLOSE_BIT] == 1'b0 ) // openloop
 				begin
 					// buck1, wait DEAD_TIME before turn on mosfet
 					if(timer_buck_4us_0 >= 16'd0 && timer_buck_4us_0 < DEAD_TIME)
@@ -407,11 +407,15 @@ begin
 	if(rst_n == 1'b0)
 		will_single_discharge <= 1'b0;
 	else if(
-		(current_state == S_BUCK_INTERLEAVE && next_state == S_DEION_SINGLE_BUCK) 
-		&& waveform[`CONTINUE_OR_SINGLE_BIT] == 1'b1
+		((current_state == S_BUCK_INTERLEAVE && next_state == S_DEION_SINGLE_BUCK) 
+		&& waveform[CONTINUE_OR_SINGLE_BIT] == 1'b1)
+		|| is_machine == 1'b0
 		)
 		will_single_discharge <= 1'b0;
-	else if(signle_discharge_button_pressed == 1'b1)
+	else if(
+		is_machine == 1'b1
+		&& signle_discharge_button_pressed == 1'b1
+		&& waveform[CONTINUE_OR_SINGLE_BIT] == 1'b1 )
 		will_single_discharge <= 1'b1;
 end
 
@@ -645,6 +649,8 @@ breakdown_detect
 
     // state
     .current_state( current_state ), // S_WAIT_BREAKDOWN = 8'b00000001
+	.timer_wait_breakdown( timer_wait_breakdown ),
+	.waveform( waveform ),
 
 	// key
 	.signle_discharge_button_pressed( signle_discharge_button_pressed ),

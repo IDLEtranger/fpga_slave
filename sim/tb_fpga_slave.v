@@ -114,28 +114,28 @@ module tb_fpga_slave;
     initial begin
         #5000;
         // deion
-        ad1_in = 12'hB99 - 12'd80;
-        ad2_in = 12'h124 + 12'd94; 
+        ad1_in = 12'h866 - 12'd80; // 0.1V approximation (5A)
+        ad2_in = 12'h8F5 + 12'd94; // 0.24V approximation (120V)
         #1000000; // 1ms + DEAD_TIME
         
         //discharge
-        ad1_in = 12'h998 - 12'd80; // 1V (30A)
-        ad2_in = 12'h68F + 12'd94; // -0.893V (25V)
+        ad1_in = 12'hA64 - 12'd80; // 0.6V (30A)
+        ad2_in = 12'h833 + 12'd94; // 0.05V (25V)
         #100000; // 100us
         
         // deion
-        ad1_in = 12'hBFF - 12'd80; // 2.5V (0A)
+        ad1_in = 12'h800 - 12'd80; // 0V (0A)
         ad2_in = 12'h800 + 12'd94; // 0V (0V)
         #2899990;
         
         // wait breakdown
-        ad1_in = 12'hB99 - 12'd80; // 2.25V approximation (5A)
-        ad2_in = 12'h124 + 12'd94; // 4.285V approximation (120V)
+        ad1_in = 12'h866 - 12'd80; // 0.1V approximation (5A)
+        ad2_in = 12'h8F5 + 12'd94; // 0.24V approximation (120V)
         #50000; // 50us
 
         //discharge
-        ad1_in = 12'h998 - 12'd80; // 1.5V (30A)
-        ad2_in = 12'h68F + 12'd94; // -0.893V (25V)
+        ad1_in = 12'hA64 - 12'd80; // 0.6V (30A)
+        ad2_in = 12'h833 + 12'd94; // 0.05V (25V)
         #100000; // 100us
 
     end

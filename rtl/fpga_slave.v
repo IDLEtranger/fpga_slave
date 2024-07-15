@@ -158,16 +158,16 @@ spi_slave_cmd spi_slave_cmd_inst
 
 discharge_control 
 #(
-	.DEAD_TIME( 16'd12 ), // Because of the extra diodes, the dead time can be long but not short.
+	.DEAD_TIME( 16'd10 ), // Because of the extra diodes, the dead time can be long but not short.
 	.WAIT_BREAKDOWN_MAXTIME( 16'd10000 ), // 100us, wait breakdown max timer count (10ns)
 	.WAIT_BREAKDOWN_MINTIME( 16'd300 ), // 3us, wait breakdown min timer count (10ns)
 	.MAX_CURRENT_LIMIT( 16'd120 ), // 78A, max current limit (A)
 
 	.IS_OPEN_CUR_DETECT( 1'b0 ), // 0 means breakdown detection do not consider sample current
-    .DEION_THRESHOLD_VOL( 16'd10 ),
+    .DEION_THRESHOLD_VOL( 16'd5 ),
 	.BREAKDOWN_THRESHOLD_CUR( 16'd15 ), // current rise threshold(A), above it means breakdown &&
-	.BREAKDOWN_THRESHOLD_VOL( 16'd40 ), // voltage fall threshold(A), below it means breakdown
-	.BREAKDOWN_THRESHOLD_TIME( 16'd70 ),
+	.BREAKDOWN_THRESHOLD_VOL( 16'd30 ), // voltage fall threshold(A), below it means breakdown
+	.BREAKDOWN_THRESHOLD_TIME( 16'd30 ),
 
 	.INPUT_VOL( 16'd100 ), // input voltage 120V
 	.INDUCTANCE ( 16'd3300 ), // inductance(uH) 3.3uH = 3300nH
@@ -176,7 +176,7 @@ discharge_control
     .CURRENT_STAND_CHARGING_TIMES( 16'd100 ),
     .CURRENT_RISE_CHARGING_TIMES( 16'd130 ),
     .CURRENT_RISE_CYCLE_TIMES( 16'd3 ),
-    .BUCK_INTERLEAVE_DELAY_TIME( 16'd10 )
+    .BUCK_INTERLEAVE_DELAY_TIME( 16'd3 )
 ) discharge_ctrl_inst
 (
     .clk(clk_100M),
