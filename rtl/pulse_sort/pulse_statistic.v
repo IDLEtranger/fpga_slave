@@ -89,6 +89,9 @@ reg [31:0] short_pulse_count;
 reg [31:0] interval_pulse_count;
 reg [31:0] total_count;
 
+// pulse count overflow
+reg is_overflow;
+
 always@(posedge clk or negedge rst_n) 
 begin
     if (rst_n == 1'b0) 
@@ -141,7 +144,10 @@ begin
     else
     begin
         if (current_pulse_type == OPEN_DIS) 
-            open_dis_state_count <= open_dis_state_count + 1'b1;
+            if (open_dis_state_count == 16'dFFFF)
+                open_dis_state_count <= 16'dFFFF;
+            else
+                open_dis_state_count <= open_dis_state_count + 1'b1;
         else
             open_dis_state_count <= 16'd0;
     end
@@ -168,33 +174,60 @@ begin
         interval_pulse_count <= 32'd0;
 
         total_count <= 32'd0;
+
+        is_overflow <= 1'b0;
     end
     else
     case (current_pulse_type)
         NORMAL_DIS: 
         begin
-            normal_pulse_count <= normal_pulse_count + 32'd1;
-            total_count <= total_count + 32'd1;
+            if (normal_pulse_count == 32'dFFFFFFFF)
+                is_overflow <= 1'b1;
+            else
+            begin
+                normal_pulse_count <= normal_pulse_count + 32'd1;
+                total_count <= total_count + 32'd1;
+            end
         end
         ARC_DIS:
         begin
-            arc_pulse_count <= arc_pulse_count + 32'd1;
-            total_count <= total_count + 32'd1;
+            if (arc_pulse_count == 32'dFFFFFFFF)
+                is_overflow <= 1'b1;
+            else
+            begin
+                arc_pulse_count <= arc_pulse_count + 32'd1;
+                total_count <= total_count + 32'd1;
+            end
         end
         OPEN_DIS:
         begin
-            open_pulse_count <= open_pulse_count + 32'd1;
-            total_count <= total_count + 32'd1;
+            if (open_pulse_count == 32'dFFFFFFFF)
+                is_overflow <= 1'b1;
+            else
+            begin
+                open_pulse_count <= open_pulse_count + 32'd1;
+                total_count <= total_count + 32'd1;
+            end
         end
         SHORT_DIS: 
         begin
-            short_pulse_count <= short_pulse_count + 32'd1;
-            total_count <= total_count + 32'd1;
+            if (short_pulse_count == 32'dFFFFFFFF)
+                is_overflow <= 1'b1;
+            else
+            begin
+                short_pulse_count <= short_pulse_count + 32'd1;
+                total_count <= total_count + 32'd1;
+            end
         end
         INTERVAL: 
         begin
-            interval_pulse_count <= interval_pulse_count + 32'd1;
-            total_count <= total_count + 32'd1;
+            if (interval_pulse_count == 32'dFFFFFFFF)
+                is_overflow <= 1'b1;
+            else
+            begin
+                interval_pulse_count <= interval_pulse_count + 32'd1;
+                total_count <= total_count + 32'd1;
+            end
         end
     endcase
 end
@@ -217,28 +250,28 @@ wire [31:0] short_pulse_rate_temp;
 
 always@(posedge clk)
 begin
-    if (normal_pulse_rate_temp > 8'hFF)
+    if (normal_pulse_rate_temp > 8'h64 || is_overflow == 1'b1)
         normal_pulse_rate <= 8'hFF;
     else
         normal_pulse_rate <= normal_pulse_rate_temp[7:0];
 end
 always@(posedge clk)
 begin
-    if (arc_pulse_rate_temp > 8'hFF)
+    if (arc_pulse_rate_temp > 8'h64 || is_overflow == 1'b1)
         arc_pulse_rate <= 8'hFF;
     else
         arc_pulse_rate <= arc_pulse_rate_temp[7:0];
 end
 always@(posedge clk)
 begin
-    if (open_pulse_rate_temp > 8'hFF)
+    if (open_pulse_rate_temp > 8'h64 || is_overflow == 1'b1)
         open_pulse_rate <= 8'hFF;
     else
         open_pulse_rate <= open_pulse_rate_temp[7:0];
 end
 always@(posedge clk)
 begin
-    if (short_pulse_rate_temp > 8'hFF)
+    if (short_pulse_rate_temp > 8'h64 || is_overflow == 1'b1)
         short_pulse_rate <= 8'hFF;
     else
         short_pulse_rate <= short_pulse_rate_temp[7:0];
