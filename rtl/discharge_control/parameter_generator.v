@@ -3,9 +3,9 @@ module parameter_generator
     input wire clk,
     input wire rst_n,
 
-    input wire machine_start_ack,
-    input wire machine_stop_ack,
-    output reg is_machine,
+    input wire machine_start_ack_spi,
+    input wire machine_stop_ack_spi,
+    output reg is_machine_spi,
 
     input wire change_Ton_ack,
     input wire [15:0] Ton_data_async,
@@ -44,8 +44,8 @@ begin
     end
     else
     begin
-        machine_start_ack_stage <= {machine_start_ack_stage[1:0], machine_start_ack};
-        machine_stop_ack_stage <= {machine_stop_ack_stage[1:0], machine_stop_ack};
+        machine_start_ack_stage <= {machine_start_ack_stage[1:0], machine_start_ack_spi};
+        machine_stop_ack_stage <= {machine_stop_ack_stage[1:0], machine_stop_ack_spi};
         change_Ton_ack_stage <= {change_Ton_ack_stage[1:0], change_Ton_ack};
         change_Toff_ack_stage <= {change_Toff_ack_stage[1:0], change_Toff_ack};
         change_Ip_ack_stage <= {change_Ip_ack_stage[1:0], change_Ip_ack};
@@ -57,11 +57,11 @@ end
 always @(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        is_machine <= 1'b0;
+        is_machine_spi <= 1'b0;
     else if( machine_start_ack_stage[2] == 1'b1 )
-        is_machine <= 1'b1;
+        is_machine_spi <= 1'b1;
     else if( machine_stop_ack_stage[2] == 1'b1 )
-        is_machine <= 1'b0;
+        is_machine_spi <= 1'b0;
 end
 
 always @(posedge clk or negedge rst_n)

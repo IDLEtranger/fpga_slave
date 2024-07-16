@@ -96,6 +96,8 @@ wire change_Toff_ack;
 wire change_Ip_ack;
 wire change_waveform_ack;
 
+wire feedback_finished;
+
 /*********************************************/
 /************* DISCHARGE CONTROL *************/
 /*********************************************/
@@ -103,6 +105,18 @@ wire is_operation;
 assign operation_indicator = ~is_operation;
 wire will_single_discharge;
 assign will_single_discharge_indicator = ~will_single_discharge;
+wire is_machine;
+
+/*********************************************/
+/************** PULSE STATISTIC **************/
+/*********************************************/
+wire [5:0] normal_pulse_rate;
+wire [5:0] arc_pulse_rate;
+wire [6:0] open_pulse_rate;
+wire [5:0] short_pulse_rate;
+wire [6:0] interval_pulse_rate;
+
+
 
 //********************************************************************//
 //*************************** Instantiation **************************//
@@ -153,7 +167,8 @@ spi_slave_cmd spi_slave_cmd_inst
     .change_waveform_ack(change_waveform_ack),
 
     .change_feedback_ack(1'b1),
-    .feedback_data_async(32'h0F0F0F0F)
+    .feedback_data_async( {normal_pulse_rate, arc_pulse_rate, open_pulse_rate, short_pulse_rate, interval_pulse_rate} ),
+    .feedback_finished( feedback_finished )
 );
 
 discharge_control 
@@ -163,9 +178,9 @@ discharge_control
 	.WAIT_BREAKDOWN_MINTIME( 16'd300 ), // 3us, wait breakdown min timer count (10ns)
 	.MAX_CURRENT_LIMIT( 16'd120 ), // 78A, max current limit (A)
 
-	.IS_OPEN_CUR_DETECT( 1'b0 ), // 0 means breakdown detection do not consider sample current
+	.IS_OPEN_CUR_DETECT( 1'b1 ), // 0 means breakdown detection do not consider sample current
     .DEION_THRESHOLD_VOL( 16'd5 ),
-	.BREAKDOWN_THRESHOLD_CUR( 16'd15 ), // current rise threshold(A), above it means breakdown &&
+	.BREAKDOWN_THRESHOLD_CUR( 16'd5 ), // current rise threshold(A), above it means breakdown &&
 	.BREAKDOWN_THRESHOLD_VOL( 16'd30 ), // voltage fall threshold(A), below it means breakdown
 	.BREAKDOWN_THRESHOLD_TIME( 16'd30 ),
 
@@ -217,7 +232,33 @@ discharge_control
     // opeartion indicator
     .is_operation(is_operation),
     .will_single_discharge(will_single_discharge),
-    .is_breakdown(is_breakdown)
+    .is_breakdown(is_breakdown),
+    .is_machine(is_machine)
+);
+
+pulse_statistic
+#(
+    .V_OPEN(60),  // sample_voltage higher than V_OPEN means no load
+    .V_SHORT(5),  // sample_voltage lower than V_SHORT means short circuit
+    .I_DISCHARGE(5), // sample_current higher than I_DISCHARGE means discharge
+    .NORMAL_DISCHARGE_DELAY(10) // in normal discharge, before breakdown, it has a short delay time in no load state.
+)pulse_statistic_inst
+( 
+    .clk(clk_100M),
+    .rst_n(sys_rst_n),
+
+    .sample_current(sample_current),
+    .sample_voltage(sample_voltage),
+
+    .is_machine(is_machine),
+
+    .feedback_finished(feedback_finished),
+
+    .normal_pulse_rate(normal_pulse_rate),
+    .arc_pulse_rate(arc_pulse_rate),
+    .open_pulse_rate(open_pulse_rate),
+	.short_pulse_rate(short_pulse_rate),
+    .interval_pulse_rate(interval_pulse_rate)
 );
 
 key_debounce key_start_debounce_inst

@@ -21,7 +21,8 @@ module spi_slave_cmd
     output wire change_waveform_ack,
 
     input wire [31:0] feedback_data_async,
-    input wire change_feedback_ack
+    input wire change_feedback_ack,
+    output reg feedback_finished
 );
 
 localparam IDLE =  3'd0;
@@ -42,7 +43,6 @@ localparam FEEDBACK =  3'd7;
     (* preserve *) reg change_Toff_finished;
     (* preserve *) reg change_Ip_finished;
     (* preserve *) reg change_waveform_finished;
-    (* preserve *) reg feedback_finished;
     (* preserve *) reg machine_start;
     (* preserve *) reg machine_stop;
     (* preserve *) wire [7:0] received_data;
@@ -61,7 +61,6 @@ localparam FEEDBACK =  3'd7;
     reg change_Toff_finished;
     reg change_Ip_finished;
     reg change_waveform_finished;
-    reg feedback_finished;
 
     reg machine_start;
     reg machine_stop;

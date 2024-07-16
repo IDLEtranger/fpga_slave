@@ -8,9 +8,9 @@ module mos_control
 	// breakdown_detect
 	parameter IS_OPEN_CUR_DETECT = 1'b0,
 	parameter DEION_THRESHOLD_VOL = 16'd8,
-	parameter BREAKDOWN_THRESHOLD_CUR = 16'd10,
-	parameter BREAKDOWN_THRESHOLD_VOL = 16'd40,
-	parameter BREAKDOWN_THRESHOLD_TIME = 16'd10, // 10ns*BREAKDOWN_THRESHOLD_TIME after the current & voltage meet the conditions, it is considered a breakdown
+	parameter signed BREAKDOWN_THRESHOLD_CUR = 16'd10,
+	parameter signed BREAKDOWN_THRESHOLD_VOL = 16'd40,
+	parameter signed BREAKDOWN_THRESHOLD_TIME = 16'd10, // 10ns*BREAKDOWN_THRESHOLD_TIME after the current & voltage meet the conditions, it is considered a breakdown
 
 	// one cycle control (OCC)
 	parameter INPUT_VOL = 16'd120, // input voltage 120V
@@ -51,6 +51,7 @@ module mos_control
 	output reg is_operation,
 	// single discharge indicator
 	output reg will_single_discharge,
+	// breakdown indicator
 	output is_breakdown
 );
 /*!!!!!!!!!!!!!!!!!!!!!!!!! waveform !!!!!!!!!!!!!!!!!!!!!!!!!*/
@@ -70,16 +71,6 @@ localparam WAVE_BUCK_CC_TRIANGLE_DISCHARGE = 16'b0010_0000_0000_0010; // 0x2002
 localparam WAVE_BUCK_SC_RECTANGLE_DISCHARGE = 16'b0110_0000_0000_0001; // 0x6001
 localparam WAVE_BUCK_SO_RECTANGLE_DISCHARGE = 16'b0100_0000_0000_0001; // 0x4001
 
-// current correction
-reg signed [15:0] corrected_current;
-always@(posedge clk or negedge rst_n)
-begin
-	if(rst_n == 1'b0)
-		corrected_current <= 16'd0;
-	else if (sample_current < 50)
-		corrected_current <= sample_current;
-end
-
 reg signed [15:0] total_current;
 always@(posedge clk or negedge rst_n)
 begin
@@ -87,7 +78,7 @@ begin
 		total_current <= 16'd0;
 	else 
 	begin
-		total_current <= sample_current << 1; // single path current multiply 2 as the total current
+		total_current <= sample_current; // single path current multiply 2 as the total current
 	end
 end				
 
@@ -606,7 +597,7 @@ one_cycle_control
 	.clk( clk ),
 	.rst_n( rst_n ),
 
-	.sample_current( corrected_current ),
+	.sample_current( sample_current ),
 	.sample_voltage( sample_voltage ),
 
 	.timer_buck_4us_0( timer_buck_4us_0 ),
@@ -651,9 +642,6 @@ breakdown_detect
     .current_state( current_state ), // S_WAIT_BREAKDOWN = 8'b00000001
 	.timer_wait_breakdown( timer_wait_breakdown ),
 	.waveform( waveform ),
-
-	// key
-	.signle_discharge_button_pressed( signle_discharge_button_pressed ),
 
     .is_breakdown( is_breakdown )
 );

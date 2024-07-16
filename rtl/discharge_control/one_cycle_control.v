@@ -88,15 +88,15 @@ begin
 	end
 end
 
-reg signed [63:0] numerator1;
-reg signed [63:0] numerator2;
+reg signed [35:0] numerator1;
+reg signed [35:0] numerator2;
 reg signed [31:0] denominator1;
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
 	begin
-		numerator1 <= 64'd0;
-		numerator2 <= 64'd0;
+		numerator1 <= 36'd0;
+		numerator2 <= 36'd0;
 		denominator1 <= 32'd0;
 	end
 
@@ -108,17 +108,17 @@ begin
 	end
 end
 
-reg signed [63:0] sum_numerators;
+reg signed [35:0] sum_numerators;
 always@(posedge clk or negedge rst_n)  //102*(2vin-V_gap)*(vin-V_gap)
 begin
 	if(rst_n == 1'b0)
-		sum_numerators <= 64'd0;
+		sum_numerators <= 36'd0;
 	else
 		sum_numerators <= numerator1 + numerator2;
 end
 
 wire [19:0] inductor_charging_time_x1000000;
-divider_64d32	divider_64d32_inst 
+divider_36d32	divider_36d32_inst 
 (
 	.clock ( clk ),
 	.denom ( denominator1 ),
@@ -131,9 +131,9 @@ reg [31:0] inductor_charging_time_reg;
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
-		inductor_charging_time_reg <= 31'd0;
+		inductor_charging_time_reg <= 32'd0;
 	else
-		inductor_charging_time_reg <= inductor_charging_time_x1000000 * 400 / 1_000_000 ; // 4us = 400 clk
+		inductor_charging_time_reg <= inductor_charging_time_x1000000 / 2500; // 400 / 1_000_000 4us = 400 clk
 end
 
 always@(posedge clk or negedge rst_n)  

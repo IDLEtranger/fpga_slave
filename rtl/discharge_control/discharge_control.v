@@ -7,9 +7,9 @@ module discharge_control
 
 	parameter IS_OPEN_CUR_DETECT = 1'b0, // 0 means breakdown detection do not consider sample current
 	parameter DEION_THRESHOLD_VOL = 16'd8, // below it means deion
-	parameter BREAKDOWN_THRESHOLD_CUR = 16'd15, // current rise threshold(A), above it means breakdown &&
-	parameter BREAKDOWN_THRESHOLD_VOL = 16'd30, // voltage fall threshold(A), below it means breakdown
-	parameter BREAKDOWN_THRESHOLD_TIME = 16'd10,
+	parameter signed BREAKDOWN_THRESHOLD_CUR = 16'd15, // current rise threshold(A), above it means breakdown &&
+	parameter signed BREAKDOWN_THRESHOLD_VOL = 16'd30, // voltage fall threshold(A), below it means breakdown
+	parameter signed BREAKDOWN_THRESHOLD_TIME = 16'd10,
 
 	parameter INPUT_VOL = 16'd120, // input voltage 120V
 	parameter INDUCTANCE = 16'd3300, // inductance(uH) 3.3uH = 3300nH
@@ -59,7 +59,8 @@ module discharge_control
 	// opeartion indicator
 	output wire is_operation,
 	output wire will_single_discharge,
-	output is_breakdown
+	output is_breakdown,
+	output is_machine
 );
 
 //********************************************************************//
@@ -67,7 +68,6 @@ module discharge_control
 //********************************************************************//
 // input signal
 `ifdef DEBUG_MODE
-	(* preserve *) wire is_machine;
 	(* preserve *) reg is_machine_key;
     (* preserve *) wire is_machine_spi;
 	(* preserve *) wire [15:0] Ton_data;
@@ -75,7 +75,6 @@ module discharge_control
 	(* preserve *) wire [15:0] Ip_data;
 	(* preserve *) wire [15:0] waveform_data;
 `else
-	wire is_machine;
 	reg is_machine_key;
     wire is_machine_spi;
 	wire [15:0] Ton_data;
@@ -160,9 +159,9 @@ parameter_generator param_gen_inst
 	.clk(clk),
 	.rst_n(rst_n),
 
-	.machine_start_ack(machine_start_ack_spi),
-	.machine_stop_ack(machine_stop_ack_spi),
-	.is_machine(is_machine_spi),
+	.machine_start_ack_spi(machine_start_ack_spi),
+	.machine_stop_ack_spi(machine_stop_ack_spi),
+	.is_machine_spi(is_machine_spi),
 
 	.change_Ton_ack(change_Ton_ack),
 	.Ton_data_async(Ton_data_async),
@@ -182,6 +181,3 @@ parameter_generator param_gen_inst
 );
 
 endmodule
-
-
-

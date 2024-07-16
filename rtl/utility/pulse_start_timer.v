@@ -11,6 +11,7 @@ pulse_start_timer_inst
     .timer_reset(  ),
     .timer_stand(  ),
     .timer_start(  ),
+    .timer_restart(  ),
     .output_timer(  )
 );
 */
@@ -26,6 +27,7 @@ module pulse_start_timer
     input wire timer_reset,
     input wire timer_stand,
     input wire timer_start,
+    input wire timer_restart,
     output wire [WIDTH-1:0] output_timer
 );
 
@@ -54,6 +56,8 @@ begin
                     state <= COUNTING;
                 else if ( stand_pulse_posedge )
                     state <= STAND;
+                else if ( restart_pulse_posedge )
+                    state <= COUNTING;
             COUNTING:
                 if ( reset_pulse_posedge ) 
                     state <= IDLE;
@@ -63,6 +67,8 @@ begin
                 if ( reset_pulse_posedge ) 
                     state <= IDLE;
                 else if ( start_pulse_posedge ) 
+                    state <= COUNTING;
+                else if (restart_pulse_posedge)
                     state <= COUNTING;
         endcase
     end
@@ -76,6 +82,8 @@ begin
     end 
     else 
     begin
+        if (restart_pulse_posedge == 1'b1)
+            count_value <= INIT_VALUE;
         case (state)
             IDLE:
                 count_value <= INIT_VALUE;
@@ -114,4 +122,12 @@ sequence_comparator_2ch sequence_comparator_stand
     .rst_n(rst_n)
 );
 
+sequence_comparator_2ch sequence_comparator_restart
+(
+    .seq_posedge(restart_pulse_posedge),
+    .seq_negedge(),
+    .sequence_in(timer_restart),
+    .clk(clk),
+    .rst_n(rst_n)
+);
 endmodule
