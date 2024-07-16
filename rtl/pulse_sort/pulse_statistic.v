@@ -39,8 +39,7 @@ module pulse_statistic
     .normal_pulse_rate(),
     .arc_pulse_rate(),
     .open_pulse_rate(),
-	.short_pulse_rate(),
-    .interval_pulse_rate()
+	.short_pulse_rate()
 );
 
 */
@@ -64,23 +63,23 @@ module pulse_statistic
 
     input wire feedback_finished,
 
-    output reg [5:0] normal_pulse_rate,
-    output reg [5:0] arc_pulse_rate,
-    output reg [6:0] open_pulse_rate,
-	output reg [5:0] short_pulse_rate,
-    output reg [6:0] interval_pulse_rate
+    output reg [7:0] normal_pulse_rate,
+    output reg [7:0] arc_pulse_rate,
+    output reg [7:0] open_pulse_rate,
+	output reg [7:0] short_pulse_rate
 );
 
 // pulse state define
-localparam NORMAL_DIS = 0; 
-localparam OPEN_DIS = 1; 
-localparam SHORT_DIS = 2;
-localparam INTERVAL = 3;
+localparam NORMAL_DIS = 3'd0;
+localparam ARC_DIS = 3'd1;
+localparam OPEN_DIS = 3'd2; 
+localparam SHORT_DIS = 3'd3;
+localparam INTERVAL = 3'd4;
 
 // pulse type record
 reg [2:0] current_pulse_type;
-reg [15:0] open_dis_state_count;
 reg [2:0] last_pulse_type;
+reg [15:0] open_dis_state_count;
 
 // pulse count
 reg [31:0] normal_pulse_count;
@@ -105,7 +104,13 @@ begin
             begin
                 if (sample_current > I_DISCHARGE) 
                 begin
-                    current_pulse_type = NORMAL_DIS;
+                    if (open_dis_state_count < NORMAL_DISCHARGE_DELAY)
+                        if (last_pulse_type == NORMAL_DIS)
+                            current_pulse_type = NORMAL_DIS;
+                        else
+                            current_pulse_type = ARC_DIS;
+                    else
+                        current_pulse_type = NORMAL_DIS;
                 end 
                 else 
                 begin
@@ -142,7 +147,7 @@ begin
     end
 end
 
-always@(posedge clk or negedge rst_n) 
+always@(posedge clk or negedge rst_n or posedge feedback_finished) 
 begin
     if (rst_n == 1'b0)
     begin
@@ -164,20 +169,17 @@ begin
 
         total_count <= 32'd0;
     end
-    else if (is_machine == 1'b1)
+    else
     case (current_pulse_type)
         NORMAL_DIS: 
         begin
-            if ( open_dis_state_count < NORMAL_DISCHARGE_DELAY )
-            begin
-                arc_pulse_count <= arc_pulse_count + 32'd1;
-                total_count <= total_count + 32'd1;
-            end
-            else
-            begin
-                normal_pulse_count <= normal_pulse_count + 32'd1;
-                total_count <= total_count + 32'd1;
-            end
+            normal_pulse_count <= normal_pulse_count + 32'd1;
+            total_count <= total_count + 32'd1;
+        end
+        ARC_DIS:
+        begin
+            arc_pulse_count <= arc_pulse_count + 32'd1;
+            total_count <= total_count + 32'd1;
         end
         OPEN_DIS:
         begin
@@ -212,42 +214,34 @@ wire [31:0] normal_pulse_rate_temp;
 wire [31:0] arc_pulse_rate_temp;
 wire [31:0] open_pulse_rate_temp;
 wire [31:0] short_pulse_rate_temp;
-wire [31:0] interval_pulse_rate_temp;
 
 always@(posedge clk)
 begin
-    if (normal_pulse_rate_temp > 6'b111111)
-        normal_pulse_rate <= 6'b111111;
+    if (normal_pulse_rate_temp > 8'hFF)
+        normal_pulse_rate <= 8'hFF;
     else
-        normal_pulse_rate <= normal_pulse_rate_temp;
+        normal_pulse_rate <= normal_pulse_rate_temp[7:0];
 end
 always@(posedge clk)
 begin
-    if (arc_pulse_rate_temp > 6'b111111)
-        arc_pulse_rate <= 6'b111111;
+    if (arc_pulse_rate_temp > 8'hFF)
+        arc_pulse_rate <= 8'hFF;
     else
-        arc_pulse_rate <= arc_pulse_rate_temp;
+        arc_pulse_rate <= arc_pulse_rate_temp[7:0];
 end
 always@(posedge clk)
 begin
-    if (open_pulse_rate_temp > 7'b1111111)
-        open_pulse_rate <= 7'b1111111;
+    if (open_pulse_rate_temp > 8'hFF)
+        open_pulse_rate <= 8'hFF;
     else
-        open_pulse_rate <= open_pulse_rate_temp;
+        open_pulse_rate <= open_pulse_rate_temp[7:0];
 end
 always@(posedge clk)
 begin
-    if (short_pulse_rate_temp > 6'b111111)
-        short_pulse_rate <= 6'b111111;
+    if (short_pulse_rate_temp > 8'hFF)
+        short_pulse_rate <= 8'hFF;
     else
-        short_pulse_rate <= short_pulse_rate_temp;
-end
-always@(posedge clk)
-begin
-    if (interval_pulse_rate_temp > 7'b1111111)
-        interval_pulse_rate <= 7'b1111111;
-    else
-        interval_pulse_rate <= interval_pulse_rate_temp;
+        short_pulse_rate <= short_pulse_rate_temp[7:0];
 end
 
 divider_32d32	divider_32d32_normal_pulse_rate
@@ -284,15 +278,6 @@ divider_32d32	divider_32d32_short_pulse_rate
 	.denom ( total_count ),
 	.numer ( scaled_short_pulse_count ),
 	.quotient ( short_pulse_rate_temp ),
-	.remain (  )
-);
-divider_32d32	divider_32d32_interval_pulse_rate
-(
-    .aclr ( feedback_finished ),
-	.clock ( clk ),
-	.denom ( total_count ),
-	.numer ( scaled_interval_pulse_count ),
-	.quotient ( interval_pulse_rate_temp ),
 	.remain (  )
 );
 

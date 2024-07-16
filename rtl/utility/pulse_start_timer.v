@@ -41,6 +41,7 @@ reg [WIDTH-1:0] count_value;
 wire start_pulse_posedge;
 wire reset_pulse_posedge;
 wire stand_pulse_posedge;
+wire restart_pulse_posedge;
 
 always @(posedge clk or negedge rst_n) 
 begin

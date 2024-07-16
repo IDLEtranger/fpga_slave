@@ -13,8 +13,8 @@ module key_debounce
 parameter N = 32 ; // debounce timer bitwidth
 parameter FREQ = 100; // model clock :Mhz
 parameter MAX_TIME = 10; // ms
-//localparam TIMER_MAX_VAL =   MAX_TIME * 1000 * FREQ;
-localparam TIMER_MAX_VAL =   50000; // 0.5ms
+localparam TIMER_MAX_VAL =   MAX_TIME * 1000 * FREQ;
+//localparam TIMER_MAX_VAL =   500; // 5us
 ////---------------- internal variables ---------------
 reg  [N-1 : 0]  q_reg;      // timing regs
 reg  [N-1 : 0]  q_next;

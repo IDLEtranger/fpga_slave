@@ -672,6 +672,7 @@ pulse_start_timer_inst
     .timer_reset( timer_after_breakdown_reset ),
     .timer_stand( 1'b0 ),
     .timer_start( is_breakdown ),
+	.timer_restart( 1'b0 ),
     .output_timer( timer_after_breakdown )
 );
 endmodule

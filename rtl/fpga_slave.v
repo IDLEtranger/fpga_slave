@@ -110,13 +110,10 @@ wire is_machine;
 /*********************************************/
 /************** PULSE STATISTIC **************/
 /*********************************************/
-wire [5:0] normal_pulse_rate;
-wire [5:0] arc_pulse_rate;
-wire [6:0] open_pulse_rate;
-wire [5:0] short_pulse_rate;
-wire [6:0] interval_pulse_rate;
-
-
+wire [7:0] normal_pulse_rate;
+wire [7:0] arc_pulse_rate;
+wire [7:0] open_pulse_rate;
+wire [7:0] short_pulse_rate;
 
 //********************************************************************//
 //*************************** Instantiation **************************//
@@ -167,7 +164,7 @@ spi_slave_cmd spi_slave_cmd_inst
     .change_waveform_ack(change_waveform_ack),
 
     .change_feedback_ack(1'b1),
-    .feedback_data_async( {normal_pulse_rate, arc_pulse_rate, open_pulse_rate, short_pulse_rate, interval_pulse_rate} ),
+    .feedback_data_async( {normal_pulse_rate, arc_pulse_rate, open_pulse_rate, short_pulse_rate} ),
     .feedback_finished( feedback_finished )
 );
 
@@ -257,8 +254,7 @@ pulse_statistic
     .normal_pulse_rate(normal_pulse_rate),
     .arc_pulse_rate(arc_pulse_rate),
     .open_pulse_rate(open_pulse_rate),
-	.short_pulse_rate(short_pulse_rate),
-    .interval_pulse_rate(interval_pulse_rate)
+	.short_pulse_rate(short_pulse_rate)
 );
 
 key_debounce key_start_debounce_inst

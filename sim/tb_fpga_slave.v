@@ -101,12 +101,12 @@ module tb_fpga_slave;
         #1000;
         //key_start = 0;
         signle_discharge_button = 0;
-        #1000000; // key press 1ms
+        #10000; // key press 10us
         //key_start = 1;
         signle_discharge_button = 1;
         #2000000; // key release 2ms
         signle_discharge_button = 0;
-        #1000000; // key press 1ms
+        #10000; // key press 10us
         signle_discharge_button = 1;
     end
 
@@ -126,6 +126,11 @@ module tb_fpga_slave;
         // deion
         ad1_in = 12'h800 - 12'd80; // 0V (0A)
         ad2_in = 12'h800 + 12'd94; // 0V (0V)
+        spi_transaction(8'hAB);  // get feedback
+        spi_transaction(8'hFF);
+        spi_transaction(8'hFF);
+        spi_transaction(8'hFF);
+        spi_transaction(8'hFF);
         #2899990;
         
         // wait breakdown
