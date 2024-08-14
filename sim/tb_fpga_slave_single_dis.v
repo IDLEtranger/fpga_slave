@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module tb_fpga_slave;
+module tb_fpga_slave_single_dis;
 
     reg clk_in;
     reg sys_rst_n;
@@ -86,7 +86,7 @@ module tb_fpga_slave;
         */
         spi_transaction(8'h9C);  // waveform
         spi_transaction(8'h01);  // single test discharge
-        spi_transaction(8'h40);  // 
+        spi_transaction(8'h60);  // 
         /*
         spi_transaction(8'h00);  // buck reac discharge
         spi_transaction(8'h01);  // 
@@ -114,18 +114,13 @@ module tb_fpga_slave;
     initial begin
         #5000;
         // deion
-        ad1_in = 12'h866 - 12'd80; // 0.1V approximation (5A)
-        ad2_in = 12'h8F5 + 12'd94; // 0.24V approximation (120V)
-        #1000000; // 1ms + DEAD_TIME
+        ad_in(5, 120, 1000000); // 5A, 120V, 1ms
         
         //discharge
-        ad1_in = 12'hA64 - 12'd80; // 0.6V (30A)
-        ad2_in = 12'h833 + 12'd94; // 0.05V (25V)
-        #100000; // 100us
+        ad_in(30, 25, 100000); // 5A, 120V, 100us
         
         // deion
-        ad1_in = 12'h800 - 12'd80; // 0V (0A)
-        ad2_in = 12'h800 + 12'd94; // 0V (0V)
+        ad_in(0, 0, 0); // 0A, 0V, 0s
         spi_transaction(8'hAB);  // get feedback
         spi_transaction(8'hFF);
         spi_transaction(8'hFF);
@@ -134,14 +129,10 @@ module tb_fpga_slave;
         #2899990;
         
         // wait breakdown
-        ad1_in = 12'h866 - 12'd80; // 0.1V approximation (5A)
-        ad2_in = 12'h8F5 + 12'd94; // 0.24V approximation (120V)
-        #50000; // 50us
+        ad_in(5, 120, 50000); // 5A, 120V, 100us
 
         //discharge
-        ad1_in = 12'hA64 - 12'd80; // 0.6V (30A)
-        ad2_in = 12'h833 + 12'd94; // 0.05V (25V)
-        #100000; // 100us
+        ad_in(30, 25, 100000); // 30A, 25V, 100us
 
     end
 
@@ -162,6 +153,18 @@ module tb_fpga_slave;
             #100;
             cs_n = 1;  // CS hold time
             #100;  // Time between transactions
+        end
+    endtask
+
+    // ADC IN Helper Task
+    task ad_in;
+        input signed [15:0] current;
+        input signed [15:0] voltage;
+        input integer duration;
+        begin
+            ad1_in = 12'h800 + (current * 1024 / 50) - 12'd80;
+            ad2_in = 12'h800 + (voltage * 1024 / 500) + 12'd94;
+            #duration;
         end
     endtask
 

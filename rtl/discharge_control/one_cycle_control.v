@@ -5,14 +5,14 @@ module one_cycle_control
 	parameter Vin = 16'd120, // input voltage 120V
 	parameter L = 16'd3300, // inductance(uH) 3.3uH = 3300nH
 	parameter fs = 16'd250, // frequency 250kHz (Ts = 4us)
-	parameter V_GAP_FIXED = 16'd25 // discharge gap voltage
+	parameter V_GAP_FIXED = 16'd20 // discharge gap voltage
 )
 (
 	input clk,
 	input rst_n,
 	
-	input [15:0] sample_current,
-	input [15:0] sample_voltage,
+	input signed [15:0] sample_current,
+	input signed [15:0] sample_voltage,
 
 	input [15:0] timer_buck_4us_0,
 
@@ -25,7 +25,7 @@ reg [15:0] sample_current_reg;
 always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0)
-		sample_current_reg <= 13'd0;
+		sample_current_reg <= 16'd0;
 	else 
 	begin
 		if(sample_current < 0)
@@ -44,8 +44,8 @@ always@(posedge clk or negedge rst_n)
 begin
 	if(rst_n == 1'b0) 
 	begin
-		Id_in_Ts <= 12'd0;
-		V_gap <= 12'd25;
+		Id_in_Ts <= 16'd0;
+		V_gap <= 16'd25;
 		i_ref <= 8'd0;
 	end
 	else

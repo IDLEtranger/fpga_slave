@@ -75,7 +75,7 @@ end
 always @(posedge clk or negedge rst_n)
 begin
     if(rst_n == 1'b0)
-        Toff_data <= 16'd100;
+        Toff_data <= 16'd0;
     else if( change_Toff_ack_stage[2] == 1'b1 )
         Toff_data <= Toff_data_async;
 end

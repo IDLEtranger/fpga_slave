@@ -45,7 +45,7 @@ begin
                 next_state <= IDLE;
             else if(
                 waveform == WAVE_BUCK_SC_RECTANGLE_DISCHARGE
-                && waveform == WAVE_BUCK_CC_RECTANGLE_DISCHARGE
+                || waveform == WAVE_BUCK_CC_RECTANGLE_DISCHARGE
                 )
                 next_state <= RECTANGLE_WAVE_STATE;
             else if(

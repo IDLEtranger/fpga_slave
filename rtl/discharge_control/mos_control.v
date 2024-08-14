@@ -6,7 +6,6 @@ module mos_control
 	parameter MAX_CURRENT_LIMIT = 16'd76,
 
 	// breakdown_detect
-	parameter IS_OPEN_CUR_DETECT = 1'b0,
 	parameter DEION_THRESHOLD_VOL = 16'd8,
 	parameter signed BREAKDOWN_THRESHOLD_CUR = 16'd10,
 	parameter signed BREAKDOWN_THRESHOLD_VOL = 16'd40,
@@ -165,7 +164,8 @@ begin
 	case(current_state)
 		S_DEION:
 		begin
-			if(waveform[CONTINUE_OR_SINGLE_BIT] == 1'b1)
+			if(waveform[CONTINUE_OR_SINGLE_BIT] == 1'b1 
+				&& timer_deion >= Toff_timer && is_operation == 1'b1)
 				next_state <= S_DEION_SINGLE_BUCK;
 			else if(timer_deion >= Toff_timer && is_operation == 1'b1)
 				next_state <= S_WAIT_BREAKDOWN;
@@ -624,7 +624,6 @@ i_set_generation iset_generation_inst
 // breakdown_detect
 breakdown_detect
 #(
-    .IS_OPEN_CUR_DETECT( IS_OPEN_CUR_DETECT ),
 	.DEION_THRESHOLD_VOL( DEION_THRESHOLD_VOL ),
 	.BREAKDOWN_THRESHOLD_CUR( BREAKDOWN_THRESHOLD_CUR ),
 	.BREAKDOWN_THRESHOLD_VOL( BREAKDOWN_THRESHOLD_VOL ),

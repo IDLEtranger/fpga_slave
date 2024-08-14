@@ -173,9 +173,8 @@ discharge_control
 	.DEAD_TIME( 16'd10 ), // Because of the extra diodes, the dead time can be long but not short.
 	.WAIT_BREAKDOWN_MAXTIME( 16'd10000 ), // 100us, wait breakdown max timer count (10ns)
 	.WAIT_BREAKDOWN_MINTIME( 16'd300 ), // 3us, wait breakdown min timer count (10ns)
-	.MAX_CURRENT_LIMIT( 16'd120 ), // 78A, max current limit (A)
+	.MAX_CURRENT_LIMIT( 16'd80 ), // 78A, max current limit (A)
 
-	.IS_OPEN_CUR_DETECT( 1'b1 ), // 0 means breakdown detection do not consider sample current
     .DEION_THRESHOLD_VOL( 16'd5 ),
 	.BREAKDOWN_THRESHOLD_CUR( 16'd5 ), // current rise threshold(A), above it means breakdown &&
 	.BREAKDOWN_THRESHOLD_VOL( 16'd30 ), // voltage fall threshold(A), below it means breakdown

@@ -5,7 +5,6 @@ module discharge_control
 	parameter WAIT_BREAKDOWN_MINTIME = 16'd300, // 3us, wait breakdown min timer count (10ns)
 	parameter MAX_CURRENT_LIMIT = 16'd78, // 78A, max current limit (A)
 
-	parameter IS_OPEN_CUR_DETECT = 1'b0, // 0 means breakdown detection do not consider sample current
 	parameter DEION_THRESHOLD_VOL = 16'd8, // below it means deion
 	parameter signed BREAKDOWN_THRESHOLD_CUR = 16'd15, // current rise threshold(A), above it means breakdown &&
 	parameter signed BREAKDOWN_THRESHOLD_VOL = 16'd30, // voltage fall threshold(A), below it means breakdown
@@ -102,7 +101,6 @@ mos_control
 	.WAIT_BREAKDOWN_MINTIME( WAIT_BREAKDOWN_MINTIME ), // 3us, wait breakdown min timer count (10ns)
 	.MAX_CURRENT_LIMIT( MAX_CURRENT_LIMIT ), // 78A, max current limit (A)
 
-	.IS_OPEN_CUR_DETECT( IS_OPEN_CUR_DETECT ), // 0 means breakdown detection do not consider sample current
 	.DEION_THRESHOLD_VOL( DEION_THRESHOLD_VOL ), // below it means deion
 	.BREAKDOWN_THRESHOLD_CUR( BREAKDOWN_THRESHOLD_CUR ), // current rise threshold(A), above it means breakdown &&
 	.BREAKDOWN_THRESHOLD_VOL( BREAKDOWN_THRESHOLD_VOL ), // voltage fall threshold(A), below it means breakdown

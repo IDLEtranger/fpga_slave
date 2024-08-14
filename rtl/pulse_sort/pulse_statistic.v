@@ -144,8 +144,8 @@ begin
     else
     begin
         if (current_pulse_type == OPEN_DIS) 
-            if (open_dis_state_count == 16'dFFFF)
-                open_dis_state_count <= 16'dFFFF;
+            if (open_dis_state_count == 16'hFFFF)
+                open_dis_state_count <= 16'hFFFF;
             else
                 open_dis_state_count <= open_dis_state_count + 1'b1;
         else
@@ -164,6 +164,7 @@ begin
         interval_pulse_count <= 32'd0;
 
         total_count <= 32'd0;
+        is_overflow <= 1'b0;
     end 
     else if (feedback_finished == 1'b1)
     begin
@@ -181,7 +182,7 @@ begin
     case (current_pulse_type)
         NORMAL_DIS: 
         begin
-            if (normal_pulse_count == 32'dFFFFFFFF)
+            if (normal_pulse_count == 32'hFFFFFFFF)
                 is_overflow <= 1'b1;
             else
             begin
@@ -191,7 +192,7 @@ begin
         end
         ARC_DIS:
         begin
-            if (arc_pulse_count == 32'dFFFFFFFF)
+            if (arc_pulse_count == 32'hFFFFFFFF)
                 is_overflow <= 1'b1;
             else
             begin
@@ -201,7 +202,7 @@ begin
         end
         OPEN_DIS:
         begin
-            if (open_pulse_count == 32'dFFFFFFFF)
+            if (open_pulse_count == 32'hFFFFFFFF)
                 is_overflow <= 1'b1;
             else
             begin
@@ -211,7 +212,7 @@ begin
         end
         SHORT_DIS: 
         begin
-            if (short_pulse_count == 32'dFFFFFFFF)
+            if (short_pulse_count == 32'hFFFFFFFF)
                 is_overflow <= 1'b1;
             else
             begin
@@ -221,7 +222,7 @@ begin
         end
         INTERVAL: 
         begin
-            if (interval_pulse_count == 32'dFFFFFFFF)
+            if (interval_pulse_count == 32'hFFFFFFFF)
                 is_overflow <= 1'b1;
             else
             begin
