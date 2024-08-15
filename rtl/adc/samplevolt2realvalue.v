@@ -8,7 +8,7 @@ module samplevolt2realvalue
     input ad_clk,
     input rst_n,
 
-    input wire signed [15:0] volt_ch1,
+    input wire signed [15:0] volt_ch1, // real vol multiple 1024
     input wire signed [15:0] volt_ch2,
 
     output wire signed [15:0] sample_current,
@@ -32,22 +32,7 @@ begin
     end
 end
 
-divider_32d16	divider_32d16_inst2 
-(
-	.clock ( ad_clk ),
-	.denom ( 16'd1000 ), // mV -> V
-	.numer ( sample_current_reg ),
-	.quotient ( sample_current ),
-	.remain (  )
-);
-
-divider_32d16	divider_32d16_inst1 
-(
-	.clock ( ad_clk ),
-	.denom ( 16'd1000 ),
-	.numer ( sample_voltage_reg ),
-	.quotient ( sample_voltage ),
-	.remain (  )
-);
+assign sample_current = sample_current_reg >>> 10;
+assign sample_voltage = sample_voltage_reg >>> 10;
 
 endmodule

@@ -1,0 +1,69 @@
+# Copyright (C) 2018  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions 
+# and other software and tools, and its AMPP partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Intel Program License 
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel FPGA IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Intel and sold by Intel or its authorized distributors.  Please
+# refer to the applicable agreement for further details.
+
+# Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
+# File: D:\FPGA\my_train\fpga_slave\proj\pin planner\fpga_slave_ax515.csv
+# Generated on: Fri May 24 16:36:37 2024
+
+# Note: The column header names should not be changed if you wish to import this .csv file into the Quartus Prime software.
+
+To,Direction,Location,I/O Bank,VREF Group,Fitter Location,I/O Standard,Reserved,Current Strength,Slew Rate,Differential Pair,Strict Preservation
+ad1_clk,Output,PIN_N6,2,B2_N0,PIN_N6,3.3-V LVCMOS,,,,,
+ad1_in[11],Input,PIN_R7,2,B2_N1,PIN_R7,3.3-V LVCMOS,,,,,
+ad1_in[10],Input,PIN_M5,2,B2_N0,PIN_M5,3.3-V LVCMOS,,,,,
+ad1_in[9],Input,PIN_P6,2,B2_N1,PIN_P6,3.3-V LVCMOS,,,,,
+ad1_in[8],Input,PIN_N5,2,B2_N0,PIN_N5,3.3-V LVCMOS,,,,,
+ad1_in[7],Input,PIN_P1,2,B2_N0,PIN_P1,3.3-V LVCMOS,,,,,
+ad1_in[6],Input,PIN_T7,2,B2_N1,PIN_T7,3.3-V LVCMOS,,,,,
+ad1_in[5],Input,PIN_P3,2,B2_N0,PIN_P3,3.3-V LVCMOS,,,,,
+ad1_in[4],Input,PIN_P2,2,B2_N0,PIN_P2,3.3-V LVCMOS,,,,,
+ad1_in[3],Input,PIN_R2,2,B2_N0,PIN_R2,3.3-V LVCMOS,,,,,
+ad1_in[2],Input,PIN_R1,2,B2_N0,PIN_R1,3.3-V LVCMOS,,,,,
+ad1_in[1],Input,PIN_P5,2,B2_N0,PIN_P5,3.3-V LVCMOS,,,,,
+ad1_in[0],Input,PIN_P4,2,B2_N0,PIN_P4,3.3-V LVCMOS,,,,,
+ad2_clk,Output,PIN_Y2,2,B2_N1,PIN_Y2,3.3-V LVCMOS,,,,,
+ad2_in[11],Input,PIN_U2,2,B2_N0,PIN_U2,3.3-V LVCMOS,,,,,
+ad2_in[10],Input,PIN_T4,2,B2_N1,PIN_T4,3.3-V LVCMOS,,,,,
+ad2_in[9],Input,PIN_V1,2,B2_N0,PIN_V1,3.3-V LVCMOS,,,,,
+ad2_in[8],Input,PIN_T5,2,B2_N1,PIN_T5,3.3-V LVCMOS,,,,,
+ad2_in[7],Input,PIN_V2,2,B2_N0,PIN_V2,3.3-V LVCMOS,,,,,
+ad2_in[6],Input,PIN_W1,2,B2_N1,PIN_W1,3.3-V LVCMOS,,,,,
+ad2_in[5],Input,PIN_R6,2,B2_N1,PIN_R6,3.3-V LVCMOS,,,,,
+ad2_in[4],Input,PIN_W2,2,B2_N1,PIN_W2,3.3-V LVCMOS,,,,,
+ad2_in[3],Input,PIN_Y1,2,B2_N1,PIN_Y1,3.3-V LVCMOS,,,,,
+ad2_in[2],Input,PIN_V3,2,B2_N1,PIN_V3,3.3-V LVCMOS,,,,,
+ad2_in[1],Input,PIN_V4,2,B2_N1,PIN_V4,3.3-V LVCMOS,,,,,
+ad2_in[0],Input,PIN_AA1,2,B2_N1,PIN_AA1,3.3-V LVCMOS,,,,,
+altera_reserved_tck,Input,,,,PIN_L2,,,,,,
+altera_reserved_tdi,Input,,,,PIN_L5,,,,,,
+altera_reserved_tdo,Output,,,,PIN_L4,,,,,,
+altera_reserved_tms,Input,,,,PIN_L1,,,,,,
+clk_in,Input,PIN_T21,5,B5_N0,PIN_T21,3.3-V LVCMOS,,,,,
+cs_n,Input,PIN_A14,7,B7_N1,PIN_A14,3.3-V LVCMOS,,,,,
+key_start,Input,PIN_C17,7,B7_N0,PIN_C17,3.3-V LVCMOS,,,,,
+key_stop,Input,PIN_A19,7,B7_N0,PIN_A19,3.3-V LVCMOS,,,,,
+miso,Output,PIN_A15,7,B7_N1,PIN_A15,3.3-V LVCMOS,,,,,
+mosfet_buck1[1],Output,PIN_N19,5,B5_N0,PIN_N19,3.3-V LVCMOS,,,,,
+mosfet_buck1[0],Output,PIN_N18,5,B5_N0,PIN_N18,3.3-V LVCMOS,,,,,
+mosfet_buck2[1],Output,PIN_N17,5,B5_N0,PIN_N17,3.3-V LVCMOS,,,,,
+mosfet_buck2[0],Output,PIN_N20,5,B5_N0,PIN_N20,3.3-V LVCMOS,,,,,
+mosfet_deion,Output,PIN_N1,2,B2_N0,PIN_N1,3.3-V LVCMOS,,,,,
+mosfet_res1[1],Output,PIN_M1,2,B2_N0,PIN_M1,3.3-V LVCMOS,,,,,
+mosfet_res1[0],Output,PIN_L7,2,B2_N0,PIN_L7,3.3-V LVCMOS,,,,,
+mosfet_res2[1],Output,PIN_M6,2,B2_N0,PIN_M6,3.3-V LVCMOS,,,,,
+mosfet_res2[0],Output,PIN_M2,2,B2_N0,PIN_M2,3.3-V LVCMOS,,,,,
+mosi,Input,PIN_E11,7,B7_N1,PIN_E11,3.3-V LVCMOS,,,,,
+operation_indicator,Output,PIN_D15,7,B7_N0,PIN_F1,,,,,,
+sclk,Input,PIN_A13,7,B7_N1,PIN_A13,3.3-V LVCMOS,,,,,
+sys_rst_n,Input,PIN_B19,7,B7_N0,PIN_B19,3.3-V LVCMOS,,,,,

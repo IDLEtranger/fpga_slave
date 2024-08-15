@@ -151,7 +151,6 @@ module tb_fpga_slave_single_dis;
                 #30; sclk = 0;  // Clock high
             end
             #100;
-            cs_n = 1;  // CS hold time
             #100;  // Time between transactions
         end
     endtask

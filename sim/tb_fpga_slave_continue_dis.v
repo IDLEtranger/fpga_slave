@@ -120,10 +120,10 @@ module tb_fpga_slave_continue_dis;
         // deion
         ad_in(0, 0, 50000); // 0A, 0V, 50us
 
-        //short
-        ad_in(95, 5, 100000);
-        // deion
-        ad_in(0, 0, 50000);
+        // //short
+        // ad_in(95, 5, 100000);
+        // // deion
+        // ad_in(0, 0, 50000);
         spi_transaction(8'hAB);  // get feedback 360ns
         spi_transaction(8'hFF);
         spi_transaction(8'hFF);
@@ -149,7 +149,7 @@ module tb_fpga_slave_continue_dis;
                 #30; sclk = 0;  // Clock high
             end
             #100;
-            cs_n = 1;  // CS hold time
+            // cs_n = 1;  // CS hold time
             #100;  // Time between transactions
         end
     endtask

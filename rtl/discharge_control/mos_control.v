@@ -3,10 +3,10 @@ module mos_control
 	parameter DEAD_TIME = 16'd10, // Because of the extra diodes, the dead time can be long but not short.
 	parameter WAIT_BREAKDOWN_MAXTIME = 16'd10000, // 50us
 	parameter WAIT_BREAKDOWN_MINTIME = 16'd80, // 0.8us
-	parameter MAX_CURRENT_LIMIT = 16'd76,
+	parameter signed MAX_CURRENT_LIMIT = 16'd76,
 
 	// breakdown_detect
-	parameter DEION_THRESHOLD_VOL = 16'd8,
+	parameter signed DEION_THRESHOLD_VOL = 16'd8,
 	parameter signed BREAKDOWN_THRESHOLD_CUR = 16'd10,
 	parameter signed BREAKDOWN_THRESHOLD_VOL = 16'd40,
 	parameter signed BREAKDOWN_THRESHOLD_TIME = 16'd10, // 10ns*BREAKDOWN_THRESHOLD_TIME after the current & voltage meet the conditions, it is considered a breakdown
@@ -14,7 +14,7 @@ module mos_control
 	// one cycle control (OCC)
 	parameter INPUT_VOL = 16'd120, // input voltage 120V
 	parameter INDUCTANCE =  16'd3300, // inductance(uH) 3.3uH = 3300nH
-	parameter V_GAP_FIXED = 16'd20, // discharge gap voltage
+	parameter V_GAP_FIXED = 16'd10, // discharge gap voltage
 
 	// openloop_control
 	parameter CURRENT_STAND_CHARGING_TIMES = 16'd80, // current stand duty cycle

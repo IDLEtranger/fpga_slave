@@ -29,30 +29,30 @@ begin
         volt_ch1 <= 16'b0;
         volt_ch2 <= 16'b0;
     end
-    else // 将电压值放大2^13(后面右移抵消) x 1000（V->mV）倍，即8192000，乘以原始精度为4V/4096，得8000，随后移位13代表除以2^13，得到mV单位的电压
+    else // 将电压值乘以原始精度为4V/4096(1/1024等于右移10位), 不移动相当于得到1024倍的电压
     begin
         ad1_in_reg <= ad1_in + 12'd80; // offset got by experiment
         ad2_in_reg <= ad2_in - 12'd94;
 
         if (ad1_in_reg < 12'b100000000000)
         begin
-            volt_ch1_reg <= (((12'b100000000000 - ad1_in_reg) * 16'd8000 ) >> 13);
+            volt_ch1_reg <= (12'b100000000000 - ad1_in_reg);
             volt_ch1 <= -volt_ch1_reg[15:0];
         end
         else
         begin
-            volt_ch1_reg <= (((ad1_in_reg - 12'b100000000000) * 16'd8000 ) >> 13);
+            volt_ch1_reg <= (ad1_in_reg - 12'b100000000000);
             volt_ch1 <= volt_ch1_reg[15:0];
         end
         
         if (ad2_in_reg < 12'b100000000000)
         begin
-            volt_ch2_reg <= (((12'b100000000000 - ad2_in_reg) * 16'd8000 ) >> 13);
+            volt_ch2_reg <= (12'b100000000000 - ad2_in_reg);
             volt_ch2 <= -volt_ch2_reg[15:0];
         end
         else
         begin
-            volt_ch2_reg <= (((ad2_in_reg - 12'b100000000000) * 16'd8000 ) >> 13);
+            volt_ch2_reg <= (ad2_in_reg - 12'b100000000000);
             volt_ch2 <= volt_ch2_reg[15:0];
         end
     end

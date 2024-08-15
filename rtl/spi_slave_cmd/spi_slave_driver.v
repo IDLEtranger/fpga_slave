@@ -65,15 +65,26 @@ module spi_slave_driver
     assign finish_cnt = mode[1] ? cnt_rise : cnt_fall;
     wire cnt_rst;
     assign cnt_rst = state == IDLE;
+    reg [7:0] timer_idle;
     
     always@(posedge clk or negedge rst_n)
     begin
         if(rst_n == 0)
             state <= IDLE;
-        else if(state == IDLE && !cs_n)
+        else if(state == IDLE && !cs_n && timer_idle > 8'd3)
             state <= WR_RD;
         else if(state == WR_RD && finish_edge && finish_cnt == 0 || cs_n)
             state <= IDLE;
+    end
+
+    always@(posedge clk or negedge rst_n)
+    begin
+        if(rst_n == 1'b0)
+            timer_idle <= 8'd0;
+        else if(state == IDLE)
+            timer_idle <= timer_idle + 8'b1; // per 10ns +1
+        else
+            timer_idle <= 8'd0;
     end
     
     always@(posedge clk or negedge rst_n)
