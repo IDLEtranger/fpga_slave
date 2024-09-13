@@ -174,13 +174,13 @@ discharge_control
 #(
 	.DEAD_TIME( 16'd10 ), // Because of the extra diodes, the dead time can be long but not short.
 	.WAIT_BREAKDOWN_MAXTIME( 16'd10000 ), // 100us, wait breakdown max timer count (10ns)
-	.WAIT_BREAKDOWN_MINTIME( 16'd300 ), // 3us, wait breakdown min timer count (10ns)
-	.MAX_CURRENT_LIMIT( 16'd80 ), // 78A, max current limit (A)
+	.WAIT_BREAKDOWN_MINTIME( 16'd300 ), // 3us, wait breakdown min timer count (10ns), useless
+	.MAX_CURRENT_LIMIT( 16'd70 ), // 78A, max current limit (A)
 
     .DEION_THRESHOLD_VOL( 16'd5 ),
 	.BREAKDOWN_THRESHOLD_CUR( 16'd5 ), // current rise threshold(A), above it means breakdown &&
 	.BREAKDOWN_THRESHOLD_VOL( 16'd30 ), // voltage fall threshold(A), below it means breakdown
-	.BREAKDOWN_THRESHOLD_TIME( 16'd30 ),
+	.BREAKDOWN_THRESHOLD_TIME( 16'd20 ),
 
 	.INPUT_VOL( 16'd100 ), // input voltage 120V
 	.INDUCTANCE ( 16'd3300 ), // inductance(uH) 3.3uH = 3300nH
@@ -236,10 +236,10 @@ discharge_control
 
 pulse_statistic
 #(
-    .V_OPEN(60),  // sample_voltage higher than V_OPEN means no load
-    .V_SHORT(5),  // sample_voltage lower than V_SHORT means short circuit
-    .I_DISCHARGE(5), // sample_current higher than I_DISCHARGE means discharge
-    .NORMAL_DISCHARGE_DELAY(10) // in normal discharge, before breakdown, it has a short delay time in no load state.
+    .V_OPEN(100),  // sample_voltage higher than V_OPEN means no load
+    .V_SHORT(12),  // sample_voltage lower than V_SHORT means short circuit
+    .I_DISCHARGE(2), // sample_current higher than I_DISCHARGE means discharge
+    .NORMAL_DISCHARGE_DELAY(80) // in normal discharge, before breakdown, it has a short delay time in no load state.
 )pulse_statistic_inst
 ( 
     .clk(clk_100M),

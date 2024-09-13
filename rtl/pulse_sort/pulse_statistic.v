@@ -4,9 +4,12 @@
     if (U < v_open)
         if (U > v_short)
             if (I > i_discharge)
+                if (open_count>normal_discharge_delay)
                     pulse_type = NORMAL_DIS;
+                else
+                    pulse_type = ARC_DIS;
             else
-                    pulse_type = OPEN_DIS;
+                pulse_type = OPEN_DIS;
         else 
             if (I > i_discharge)
                     pulse_type = SHORT_DIS;
@@ -47,10 +50,10 @@ module pulse_statistic
 module pulse_statistic
 #(
     // threshold define
-    parameter signed [15:0] V_OPEN = 60,  // sample_voltage higher than V_OPEN means no load
-    parameter signed [15:0] V_SHORT = 5,  // sample_voltage lower than V_SHORT means short circuit
-    parameter signed [15:0] I_DISCHARGE = 5, // sample_current higher than I_DISCHARGE means discharge
-    parameter NORMAL_DISCHARGE_DELAY = 10 // in normal discharge, before breakdown, it has a short delay time in no load state.
+    parameter signed [15:0] V_OPEN = 100,  // sample_voltage higher than V_OPEN means no load
+    parameter signed [15:0] V_SHORT = 12,  // sample_voltage lower than V_SHORT means short circuit
+    parameter signed [15:0] I_DISCHARGE = 2, // sample_current higher than I_DISCHARGE means discharge
+    parameter NORMAL_DISCHARGE_DELAY = 100 // in normal discharge, before breakdown, it has a short delay time in no load state.
 )
 ( 
     input clk,
@@ -175,7 +178,6 @@ begin
         interval_pulse_count <= 32'd0;
 
         total_count <= 32'd0;
-
         is_overflow <= 1'b0;
     end
     else

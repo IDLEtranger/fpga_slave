@@ -164,11 +164,22 @@ begin
 	case(current_state)
 		S_DEION:
 		begin
-			if(waveform[CONTINUE_OR_SINGLE_BIT] == 1'b1 
-				&& timer_deion >= Toff_timer && is_operation == 1'b1)
-				next_state <= S_DEION_SINGLE_BUCK;
-			else if(timer_deion >= Toff_timer && is_operation == 1'b1)
-				next_state <= S_WAIT_BREAKDOWN;
+			if (
+				waveform == WAVE_RES_CO_DISCHARGE
+				|| waveform == WAVE_BUCK_CC_RECTANGLE_DISCHARGE
+				|| waveform == WAVE_BUCK_CC_TRIANGLE_DISCHARGE
+				|| waveform == WAVE_BUCK_SC_RECTANGLE_DISCHARGE
+				|| waveform == WAVE_BUCK_SO_RECTANGLE_DISCHARGE
+				)
+			begin
+				if(waveform[CONTINUE_OR_SINGLE_BIT] == 1'b1 
+					&& timer_deion >= Toff_timer && is_operation == 1'b1)
+					next_state <= S_DEION_SINGLE_BUCK;
+				else if(timer_deion >= Toff_timer && is_operation == 1'b1)
+					next_state <= S_WAIT_BREAKDOWN;
+				else
+					next_state <= S_DEION;
+			end
 			else 
 				next_state <= S_DEION;
 		end
